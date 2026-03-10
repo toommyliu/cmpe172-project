@@ -5,7 +5,7 @@ public enum AppointmentStatus {
     Booked(1),
     Pending(2),
     Complete(3),
-    Canceled(100),
+    Canceled(100);
 
     private int value;
 
@@ -27,8 +27,8 @@ public enum AppointmentStatus {
 
     public static AppointmentStatus fromValue(int value) {
         return switch (value) {
-            case 1 -> Pending;
-            case 2 -> InProgress;
+            case 1 -> Booked;
+            case 2 -> Pending;
             default -> Unknown;
         };
     }
