@@ -1,9 +1,7 @@
-package edu.sjsu.cmpe172.starterdemo.model;
+package edu.sjsu.cmpe172.salon.model;
 
-import edu.sjsu.cmpe172.starterdemo.enums.Speciality;
-import edu.sjsu.cmpe172.starterdemo.enums.UserRole;
-
-import edu.sjsu.cmpe172.starterdemo.model.Service;
+import edu.sjsu.cmpe172.salon.enums.Speciality;
+import edu.sjsu.cmpe172.salon.enums.UserRole;
 
 import java.util.List;
 

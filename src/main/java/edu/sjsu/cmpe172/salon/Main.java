@@ -1,13 +1,11 @@
-package edu.sjsu.cmpe172.starterdemo;
+package edu.sjsu.cmpe172.salon;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class StarterDemoApplication {
-
+public class Main {
 	public static void main(String[] args) {
-		SpringApplication.run(StarterDemoApplication.class, args);
+		SpringApplication.run(Main.class, args);
 	}
-
 }

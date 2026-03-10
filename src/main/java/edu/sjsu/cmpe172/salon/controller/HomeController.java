@@ -1,4 +1,4 @@
-package edu.sjsu.cmpe172.starterdemo.controller;
+package edu.sjsu.cmpe172.salon.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;

@@ -1,6 +1,6 @@
-package edu.sjsu.cmpe172.starterdemo.repository;
+package edu.sjsu.cmpe172.salon.repository;
 
-import edu.sjsu.cmpe172.starterdemo.model.Item;
+import edu.sjsu.cmpe172.salon.model.Item;
 import org.springframework.stereotype.Repository;
 
 import java.util.*;

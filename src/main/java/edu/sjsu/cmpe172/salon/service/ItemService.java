@@ -1,7 +1,7 @@
-package edu.sjsu.cmpe172.starterdemo.service;
+package edu.sjsu.cmpe172.salon.service;
 
-import edu.sjsu.cmpe172.starterdemo.model.Item;
-import edu.sjsu.cmpe172.starterdemo.repository.ItemRepository;
+import edu.sjsu.cmpe172.salon.model.Item;
+import edu.sjsu.cmpe172.salon.repository.ItemRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

@@ -1,7 +1,7 @@
-package edu.sjsu.cmpe172.starterdemo.controller;
+package edu.sjsu.cmpe172.salon.controller;
 
-import edu.sjsu.cmpe172.starterdemo.model.Item;
-import edu.sjsu.cmpe172.starterdemo.service.ItemService;
+import edu.sjsu.cmpe172.salon.model.Item;
+import edu.sjsu.cmpe172.salon.service.ItemService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

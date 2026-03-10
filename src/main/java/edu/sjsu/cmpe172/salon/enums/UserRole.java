@@ -1,4 +1,4 @@
-package edu.sjsu.cmpe172.starterdemo.enums;
+package edu.sjsu.cmpe172.salon.enums;
 
 public enum UserRole {
     Customer(1),

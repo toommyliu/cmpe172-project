@@ -1,4 +1,4 @@
-package edu.sjsu.cmpe172.starterdemo.model;
+package edu.sjsu.cmpe172.salon.model;
 
 // Appointment(id, customer_user_id, stylist_userid, service_id, availabilty_slot_id,
 // status, date_time)

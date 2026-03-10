@@ -1,4 +1,4 @@
-package edu.sjsu.cmpe172.starterdemo.model;
+package edu.sjsu.cmpe172.salon.model;
 
 public class Item {
 

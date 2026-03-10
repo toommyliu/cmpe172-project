@@ -1,13 +1,11 @@
-package edu.sjsu.cmpe172.starterdemo;
+package edu.sjsu.cmpe172.salon;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class StarterDemoApplicationTests {
-
+class MainTests {
 	@Test
 	void contextLoads() {
 	}
-
 }

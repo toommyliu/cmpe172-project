@@ -1,6 +1,6 @@
-package edu.sjsu.cmpe172.starterdemo.model;
+package edu.sjsu.cmpe172.salon.model;
 
-import edu.sjsu.cmpe172.starterdemo.enums.AppointmentStatus;
+import edu.sjsu.cmpe172.salon.enums.AppointmentStatus;
 
 import java.time.LocalDateTime;
 
