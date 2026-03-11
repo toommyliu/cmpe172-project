@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Home page</title>
-</head>
+<html lang="en">
+<jsp:include page="common/header.jsp" />
+
 <body>
-    <h1><%= request.getAttribute("message") %></h1>
-    <p>This is a JSP coming from <b>src/main/webapp/WEB-INF/jsp/index.jsp</b>.</p>
-    <p>Time on server: <%= new java.util.Date() %></p>
+    <jsp:include page="common/navbar.jsp" />
+    <main class="container d-flex justify-content-center align-items-center" style="height: calc(100vh - 60px);">
+        <div class="text-center">
+            <p class="lead">Welcome to your hair salon!</p>
+            <a href="/appointments">Click to manage your appointments</a>
+        </div>
+    </main>
 </body>
+
 </html>

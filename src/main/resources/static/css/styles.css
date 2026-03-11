@@ -1,0 +1,22 @@
+.page-header {
+  padding: 3rem 0;
+  background-color: var(--bs-tertiary-bg);
+  border-bottom: 1px solid var(--bs-border-color);
+  margin-bottom: 2rem;
+}
+
+.page-header__container {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header__title {
+  font-weight: 700;
+  color: var(--bs-body-color);
+  margin-bottom: 0.5rem;
+}
+
+.page-header__subtitle {
+  font-size: 1.1rem;
+  margin-bottom: 0;
+}

@@ -1,0 +1,9 @@
+{
+    // https://marketplace.visualstudio.com/items?itemName=Zignd.html-css-class-completion
+    "html-css-class-completion.includeGlobPattern": "src/main/resources/static/css/*.css",
+    "html-css-class-completion.enableEmmetSupport": true,
+    "html-css-class-completion.HTMLLanguages": [
+        "html",
+        "jsp"
+    ]
+}
