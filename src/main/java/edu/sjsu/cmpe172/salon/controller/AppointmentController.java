@@ -7,21 +7,17 @@ import edu.sjsu.cmpe172.salon.model.Stylist;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.Arrays;
 
 @Controller
-public class AppointmentController extends BaseController {
+public class AppointmentController {
     private final AppointmentService service;
 
     public AppointmentController(AppointmentService service) {
@@ -69,36 +65,31 @@ public class AppointmentController extends BaseController {
     }
 
     @GetMapping("/appointments")
-    public void appointments(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    public String appointments(Model model) {
         List<Appointment> appointments = service.getAllAppointments();
-        request.setAttribute("helper", new AppointmentHelper(appointments));
-        // TODO: replace these with data source calls
-        request.setAttribute("user", getCustomer());
-        request.setAttribute("stylist", getStylist());
-        forward("/appointments.jsp", request, response);
+        model.addAttribute("helper", new AppointmentHelper(appointments));
+        model.addAttribute("user", getCustomer());
+        model.addAttribute("stylist", getStylist());
+        return "appointments";
     }
 
     @GetMapping("/available-slots")
-    public void availableSlots(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        forward("/available-slots.jsp", request, response);
+    public String availableSlots() {
+        return "available-slots";
     }
 
     @GetMapping("/book-appointment")
-    public void bookAppointment(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        request.setAttribute("specialities", Arrays.stream(Speciality.values())
+    public String bookAppointment(Model model) {
+        model.addAttribute("specialities", Arrays.stream(Speciality.values())
                 .filter(s -> s != Speciality.None)
                 .collect(Collectors.toList()));
-        request.setAttribute("stylists", List.of(getStylist()));
-        forward("/book-appointment.jsp", request, response);
+        model.addAttribute("stylists", List.of(getStylist()));
+        return "book-appointment";
     }
 
     @GetMapping("/booking-confirmation")
-    public void bookingConfirmation(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        forward("/booking-confirmation.jsp", request, response);
+    public String bookingConfirmation() {
+        return "booking-confirmation";
     }
 
     public static class AppointmentHelper {
