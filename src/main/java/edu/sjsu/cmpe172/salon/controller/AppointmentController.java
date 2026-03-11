@@ -79,6 +79,28 @@ public class AppointmentController extends BaseController {
         forward("/appointments.jsp", request, response);
     }
 
+    @GetMapping("/available-slots")
+    public void availableSlots(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        forward("/available-slots.jsp", request, response);
+    }
+
+    @GetMapping("/book-appointment")
+    public void bookAppointment(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        request.setAttribute("specialities", Arrays.stream(Speciality.values())
+                .filter(s -> s != Speciality.None)
+                .collect(Collectors.toList()));
+        request.setAttribute("stylists", List.of(getStylist()));
+        forward("/book-appointment.jsp", request, response);
+    }
+
+    @GetMapping("/booking-confirmation")
+    public void bookingConfirmation(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        forward("/booking-confirmation.jsp", request, response);
+    }
+
     public static class AppointmentHelper {
         private final List<Appointment> appointments;
 

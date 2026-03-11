@@ -6,5 +6,6 @@
     <script src="/js/bootstrap.bundle.min.js"></script>
 
     <link href="/css/styles.css" rel="stylesheet">
+    <script src="/js/script.js" defer></script>
 </head>
 
