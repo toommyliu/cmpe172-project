@@ -3,14 +3,14 @@
 <%@ page import="edu.sjsu.cmpe172.salon.enums.Speciality" %>
 <!DOCTYPE html>
 <html lang="en">
-<jsp:include page="common/header.jsp" />
+<jsp:include page="/WEB-INF/jsp/common/header.jsp" />
 
 <head>
     <title>The Studio - Appointment Form</title>
 </head>
 
 <body>
-    <jsp:include page="common/navbar.jsp" />
+    <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
     <main class="container py-4">
         <%

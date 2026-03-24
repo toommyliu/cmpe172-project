@@ -40,7 +40,7 @@ public class AppointmentController {
     @GetMapping("/appointments")
     public String appointments(Model model) {
         model.addAttribute("appointments", service.getAllAppointments());
-        return "appointments";
+        return "appointments/index";
     }
 
     @GetMapping("/appointments/new")
@@ -48,7 +48,7 @@ public class AppointmentController {
         model.addAttribute("appointment", new Appointment());
         model.addAttribute("formAction", "/appointments");
         model.addAttribute("pageTitle", "Create Appointment");
-        return "appointment-form";
+        return "appointments/form";
     }
 
     @PostMapping("/appointments")
@@ -65,7 +65,7 @@ public class AppointmentController {
                     model.addAttribute("appointment", appointment);
                     model.addAttribute("formAction", "/appointments/" + id);
                     model.addAttribute("pageTitle", "Edit Appointment");
-                    return "appointment-form";
+                    return "appointments/form";
                 })
                 .orElseGet(() -> {
                     redirectAttributes.addFlashAttribute("errorMessage", "Appointment not found.");

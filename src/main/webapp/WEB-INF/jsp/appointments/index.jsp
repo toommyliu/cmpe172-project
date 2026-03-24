@@ -3,14 +3,14 @@
 <%@ page import="java.util.List" %>
 <!DOCTYPE html>
 <html lang="en">
-<jsp:include page="common/header.jsp" />
+<jsp:include page="/WEB-INF/jsp/common/header.jsp" />
 
 <head>
     <title>The Studio - Appointments</title>
 </head>
 
 <body>
-    <jsp:include page="common/navbar.jsp" />
+    <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
     <div class="page-header">
         <div class="container page-header__container">
