@@ -98,7 +98,7 @@ public class AppointmentController {
 
     @GetMapping("/available-slots")
     public String availableSlots() {
-        return "available-slots";
+        return "booking/available-slots";
     }
 
     @GetMapping("/book-appointment")
@@ -107,11 +107,11 @@ public class AppointmentController {
                 .filter(s -> s != Speciality.None)
                 .collect(Collectors.toList()));
         model.addAttribute("stylists", List.of(getStylist()));
-        return "book-appointment";
+        return "booking/book-appointment";
     }
 
     @GetMapping("/booking-confirmation")
     public String bookingConfirmation() {
-        return "booking-confirmation";
+        return "booking/booking-confirmation";
     }
 }
