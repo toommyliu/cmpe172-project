@@ -41,7 +41,7 @@
             <div class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
                 <% if (!authenticated) { %>
                     <a class="nav-link <%= path.startsWith("/login") ? "active" : "" %>" href="<%= contextPath %>/login">Login</a>
-                    <a class="btn btn-outline-light btn-sm" href="<%= contextPath %>/register">Sign up</a>
+                    <a class="btn btn-outline-light btn-sm <%= path.startsWith("/register") ? "active" : "" %>" href="<%= contextPath %>/register">Sign up</a>
                 <% } else { %>
                     <span class="navbar-text small text-light opacity-75"><%= request.getUserPrincipal().getName() %></span>
                     <form method="post" action="<%= contextPath %>/logout" class="d-inline mb-0">
