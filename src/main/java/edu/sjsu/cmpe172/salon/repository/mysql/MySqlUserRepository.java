@@ -31,7 +31,6 @@ public class MySqlUserRepository implements UserRepository {
     private final String adminPassword;
     private final String adminFirstName;
     private final String adminLastName;
-    private final boolean bootstrapAdminEnabled;
     private final UserDataMapper dataMapper;
 
     public MySqlUserRepository(@Value("${salon.db.url}") String dbUrl,
@@ -50,7 +49,6 @@ public class MySqlUserRepository implements UserRepository {
         this.adminPassword = adminPassword;
         this.adminFirstName = adminFirstName;
         this.adminLastName = adminLastName;
-        this.bootstrapAdminEnabled = bootstrapAdminEnabled;
         this.dataMapper = dataMapper;
         ensureSchema();
         seedSpecialities();
