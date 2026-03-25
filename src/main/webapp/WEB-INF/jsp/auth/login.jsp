@@ -11,13 +11,12 @@
 <body>
     <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
-    <main class="container py-5 auth-page">
+    <main class="container py-5">
         <div class="row justify-content-center">
             <div class="col-md-7 col-lg-5">
-                <div class="card booking__card">
+                <div class="card border-0">
                     <div class="card-body p-4 p-md-5">
-                        <h1 class="h3 mb-3">Sign in</h1>
-                        <p class="text-muted mb-4">Use your email address and password.</p>
+                        <h1 class="h3 mb-4">Sign in</h1>
 
                         <%
                             CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
@@ -53,11 +52,15 @@
                                 <label class="form-label" for="password">Password</label>
                                 <input class="form-control" id="password" name="password" type="password" required>
                             </div>
-                            <button class="btn btn-primary w-100" type="submit">Login</button>
+                            <div class="d-grid">
+                                <button class="btn btn-primary" type="submit">Login</button>
+                            </div>
                         </form>
 
                         <div class="mt-4 text-center">
-                            <a href="/register">Need an account? Sign up</a>
+                            <p class="text-muted small mb-0">
+                                Need an account? <a href="/register">Sign up</a>
+                            </p>
                         </div>
                     </div>
                 </div>

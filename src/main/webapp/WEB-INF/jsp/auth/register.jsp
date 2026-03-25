@@ -11,13 +11,12 @@
 <body>
     <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
-    <main class="container py-5 auth-page">
+    <main class="container py-5">
         <div class="row justify-content-center">
-            <div class="col-lg-7">
-                <div class="card booking__card">
+            <div class="col-lg-6">
+                <div class="card border-0">
                     <div class="card-body p-4 p-md-5">
-                        <h1 class="h3 mb-3">Create account</h1>
-                        <p class="text-muted mb-4">New accounts are created as customers.</p>
+                        <h1 class="h3 mb-4">Create account</h1>
 
                         <%
                             CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
@@ -42,11 +41,11 @@
                                     <label class="form-label" for="lastName">Last name</label>
                                     <input class="form-control" id="lastName" name="lastName" type="text" required>
                                 </div>
-                                <div class="col-md-8">
+                                <div class="col-md-12">
                                     <label class="form-label" for="emailAddress">Email</label>
                                     <input class="form-control" id="emailAddress" name="emailAddress" type="email" required>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-12">
                                     <label class="form-label" for="phoneNumber">Phone</label>
                                     <input class="form-control" id="phoneNumber" name="phoneNumber" type="text">
                                 </div>
@@ -60,6 +59,12 @@
                                 <button class="btn btn-primary" type="submit">Create account</button>
                             </div>
                         </form>
+
+                        <div class="mt-4 text-center">
+                            <p class="text-muted small mb-0">
+                                Already have an account? <a href="/login">Sign in</a>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
