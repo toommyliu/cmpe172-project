@@ -12,9 +12,9 @@
     <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
     <div class="page-header">
-        <div class="container">
-            <h1 class="page-header__title">Admin Dashboard</h1>
-            <p class="page-header__subtitle text-secondary">Manage platform users and assign stylist roles.</p>
+        <div class="container page-header__container">
+            <h1 class="h2 page-header__title">Admin Dashboard</h1>
+            <p class="page-header__subtitle text-muted">Manage platform users and assign stylist roles.</p>
         </div>
     </div>
 

@@ -22,14 +22,14 @@ public class AdminController {
         Speciality speciality = Speciality.fromValue(specialityId);
         if (speciality == Speciality.None) {
             redirectAttributes.addFlashAttribute("errorMessage", "A valid speciality is required.");
-            return "redirect:/admin/dashboard";
+            return "redirect:/dashboard";
         }
 
         try {
             boolean success = userService.assignStylistRole(userId, speciality);
             if (!success) {
                 redirectAttributes.addFlashAttribute("errorMessage", "User not found.");
-                return "redirect:/admin/dashboard";
+                return "redirect:/dashboard";
             }
             redirectAttributes.addFlashAttribute(
                     "successMessage",
@@ -38,6 +38,6 @@ public class AdminController {
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
-        return "redirect:/admin/dashboard";
+        return "redirect:/dashboard";
     }
 }

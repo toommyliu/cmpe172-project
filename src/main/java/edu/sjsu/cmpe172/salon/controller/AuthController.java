@@ -61,31 +61,18 @@ public class AuthController {
     }
 
     @GetMapping("/dashboard")
-    public String dashboard(@AuthenticationPrincipal SalonUserPrincipal principal) {
+    public String dashboard(@AuthenticationPrincipal SalonUserPrincipal principal, Model model) {
         if (principal == null) {
             return "redirect:/login";
         }
 
         return switch (principal.getUserRole()) {
-            case Admin -> "redirect:/admin/dashboard";
-            case Stylist -> "redirect:/stylist/dashboard";
-            case Customer -> "redirect:/customer/dashboard";
+            case Admin -> {
+                model.addAttribute("users", userService.getAllUsers());
+                yield "dashboard/admin";
+            }
+            case Stylist -> "dashboard/stylist";
+            case Customer -> "dashboard/customer";
         };
-    }
-
-    @GetMapping("/admin/dashboard")
-    public String adminDashboard(Model model) {
-        model.addAttribute("users", userService.getAllUsers());
-        return "dashboard/admin";
-    }
-
-    @GetMapping("/stylist/dashboard")
-    public String stylistDashboard() {
-        return "dashboard/stylist";
-    }
-
-    @GetMapping("/customer/dashboard")
-    public String customerDashboard() {
-        return "dashboard/customer";
     }
 }
