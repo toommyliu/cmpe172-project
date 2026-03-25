@@ -13,8 +13,6 @@ public abstract class User {
 
     private String password; // hashed
 
-    private UserRole role;
-
     public User() {}
     public User(int id, String firstName, String lastName, String emailAddress, String password) {
         this.id = id;
@@ -66,20 +64,15 @@ public abstract class User {
 
     public abstract UserRole getRole();
 
-    public  void setRole(UserRole role) {
-        this.role = role;
-    }
-
     public boolean isCustomer() {
-        return this.role == UserRole.Customer;
+        return getRole() == UserRole.Customer;
     }
 
     public boolean isStylist() {
-        return this.role == UserRole.Stylist;
+        return getRole() == UserRole.Stylist;
     }
 
     public boolean isAdmin() {
-        return this.role == UserRole.Admin;
+        return getRole() == UserRole.Admin;
     }
 }
-

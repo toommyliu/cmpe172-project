@@ -8,10 +8,12 @@
         <div class="text-center">
             <p class="lead">Welcome to your hair salon!</p>
             <div class="d-grid gap-3 flex-col">
-                <a href="/appointments">Demo appointments</a>
-                <a href="/available-slots" >Demo available slots</a>
-                <a href="/book-appointment">Demo appointment booking</a>
-                <a href="/booking-confirmation">Demo booking confirmation</a>
+                <% if (request.getUserPrincipal() == null) { %>
+                    <a href="/login">Login</a>
+                    <a href="/register">Create an account</a>
+                <% } else { %>
+                    <a href="/dashboard">Go to dashboard</a>
+                <% } %>
             </div>
         </div>
     </main>

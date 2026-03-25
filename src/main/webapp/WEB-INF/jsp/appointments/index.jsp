@@ -1,6 +1,7 @@
 <%@ page import="edu.sjsu.cmpe172.salon.model.Appointment" %>
 <%@ page import="edu.sjsu.cmpe172.salon.enums.Speciality" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
 <!DOCTYPE html>
 <html lang="en">
 <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
@@ -14,15 +15,24 @@
 
     <div class="page-header">
         <div class="container page-header__container">
-            <h1 class="h2 page-header__title">Appointments</h1>
+            <%
+                String pageTitle = (String) request.getAttribute("pageTitle");
+                if (pageTitle == null) {
+                    pageTitle = "Appointments";
+                }
+            %>
+            <h1 class="h2 page-header__title"><%= pageTitle %></h1>
             <p class="text-muted page-header__subtitle">Manage and track your appointments with us.</p>
         </div>
     </div>
 
     <main class="container">
         <%
+            CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
             String successMessage = (String) request.getAttribute("successMessage");
             String errorMessage = (String) request.getAttribute("errorMessage");
+            Boolean showManagementActions = (Boolean) request.getAttribute("showManagementActions");
+            boolean canManage = showManagementActions != null && showManagementActions;
             if (successMessage != null) {
         %>
             <div class="alert alert-success" role="alert"><%= successMessage %></div>
@@ -35,9 +45,11 @@
             }
         %>
 
-        <div class="d-flex justify-content-end mb-3">
-            <a class="btn btn-primary" href="/appointments/new">New Appointment</a>
-        </div>
+        <% if (canManage) { %>
+            <div class="d-flex justify-content-end mb-3">
+                <a class="btn btn-primary" href="/appointments/new">New Appointment</a>
+            </div>
+        <% } %>
 
         <div class="table-responsive bg-white p-4 rounded">
             <table class="table table-striped align-middle">
@@ -48,7 +60,9 @@
                         <th>Stylist ID</th>
                         <th>Service</th>
                         <th>Slot ID</th>
-                        <th>Actions</th>
+                        <% if (canManage) { %>
+                            <th>Actions</th>
+                        <% } %>
                     </tr>
                 </thead>
                 <tbody>
@@ -64,19 +78,24 @@
                             <td><%= apt.getStylistUserId() %></td>
                             <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
                             <td><%= apt.getAvailabilitySlotId() %></td>
-                            <td>
-                                <a class="btn btn-sm btn-outline-secondary" href="/appointments/<%= apt.getId() %>/edit">Edit</a>
-                                <form method="post" action="/appointments/<%= apt.getId() %>/delete" style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                </form>
-                            </td>
+                            <% if (canManage) { %>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-secondary" href="/appointments/<%= apt.getId() %>/edit">Edit</a>
+                                    <form method="post" action="/appointments/<%= apt.getId() %>/delete" style="display:inline;">
+                                        <% if (csrfToken != null) { %>
+                                            <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                        <% } %>
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </td>
+                            <% } %>
                         </tr>
                     <%
                             }
                         } else {
                     %>
                         <tr>
-                            <td colspan="6" class="text-center py-4">No appointments found.</td>
+                            <td colspan="<%= canManage ? 6 : 5 %>" class="text-center py-4">No appointments found.</td>
                         </tr>
                     <%
                         }

@@ -10,6 +10,10 @@ public interface AppointmentRepository {
 
     Optional<Appointment> findById(int id);
 
+    List<Appointment> findByCustomerUserId(int customerUserId);
+
+    List<Appointment> findByStylistUserId(int stylistUserId);
+
     Appointment create(Appointment appointment);
 
     Appointment update(Appointment appointment);

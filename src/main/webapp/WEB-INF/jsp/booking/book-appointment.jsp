@@ -63,7 +63,7 @@
                                             if (stylists != null) {
                                                 for (Stylist s : stylists) {
                                         %>
-                                            <option value="<%= s.getId() %>"><%= s.getFirstName() %> <%= s.getLastName() %> - <%= s.getSpeciality() %></option>
+                                            <option value="<%= s.getId() %>"><%= s.getFirstName() %> <%= s.getLastName() %> - <%= s.getSpeciality().toString() %></option>
                                         <%
                                                 }
                                             }
