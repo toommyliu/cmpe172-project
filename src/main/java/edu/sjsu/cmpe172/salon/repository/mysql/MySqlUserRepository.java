@@ -31,6 +31,14 @@ public class MySqlUserRepository implements UserRepository {
     private final String adminPassword;
     private final String adminFirstName;
     private final String adminLastName;
+    private final String customerEmail;
+    private final String customerPassword;
+    private final String customerFirstName;
+    private final String customerLastName;
+    private final String stylistEmail;
+    private final String stylistPassword;
+    private final String stylistFirstName;
+    private final String stylistLastName;
     private final UserDataMapper dataMapper;
 
     public MySqlUserRepository(@Value("${salon.db.url}") String dbUrl,
@@ -40,7 +48,15 @@ public class MySqlUserRepository implements UserRepository {
                                @Value("${salon.auth.admin.password:admin12345}") String adminPassword,
                                @Value("${salon.auth.admin.first-name:Salon}") String adminFirstName,
                                @Value("${salon.auth.admin.last-name:Admin}") String adminLastName,
-                               @Value("${salon.auth.admin.bootstrap-enabled:true}") boolean bootstrapAdminEnabled,
+                               @Value("${salon.auth.customer.email:customer@salon.local}") String customerEmail,
+                               @Value("${salon.auth.customer.password:customer12345}") String customerPassword,
+                               @Value("${salon.auth.customer.first-name:Customer}") String customerFirstName,
+                               @Value("${salon.auth.customer.last-name:User}") String customerLastName,
+                               @Value("${salon.auth.stylist.email:stylist@salon.local}") String stylistEmail,
+                               @Value("${salon.auth.stylist.password:stylist12345}") String stylistPassword,
+                               @Value("${salon.auth.stylist.first-name:Stylist}") String stylistFirstName,
+                               @Value("${salon.auth.stylist.last-name:User}") String stylistLastName,
+                               @Value("${salon.auth.bootstrap-enabled:true}") boolean bootstrapEnabled,
                                UserDataMapper dataMapper) {
         this.dbUrl = dbUrl;
         this.dbUsername = dbUsername;
@@ -49,11 +65,21 @@ public class MySqlUserRepository implements UserRepository {
         this.adminPassword = adminPassword;
         this.adminFirstName = adminFirstName;
         this.adminLastName = adminLastName;
+        this.customerEmail = customerEmail;
+        this.customerPassword = customerPassword;
+        this.customerFirstName = customerFirstName;
+        this.customerLastName = customerLastName;
+        this.stylistEmail = stylistEmail;
+        this.stylistPassword = stylistPassword;
+        this.stylistFirstName = stylistFirstName;
+        this.stylistLastName = stylistLastName;
         this.dataMapper = dataMapper;
         ensureSchema();
         seedSpecialities();
-        if (bootstrapAdminEnabled) {
+        if (bootstrapEnabled) {
             ensureDefaultAdmin();
+            ensureDefaultCustomer();
+            ensureDefaultStylist();
         }
     }
 
@@ -270,6 +296,82 @@ public class MySqlUserRepository implements UserRepository {
         } catch (SQLException ex) {
             rollbackQuietly(connection);
             throw new IllegalStateException("Failed to ensure default admin user", ex);
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
+    private void ensureDefaultCustomer() {
+        Connection connection = null;
+        try {
+            connection = openConnection();
+            connection.setAutoCommit(false);
+
+            Integer userId = findUserIdByEmail(connection, customerEmail);
+            if (userId == null) {
+                try (PreparedStatement statement = connection.prepareStatement(UserSql.INSERT_USER, Statement.RETURN_GENERATED_KEYS)) {
+                    statement.setString(1, customerFirstName);
+                    statement.setString(2, customerLastName);
+                    statement.setString(3, customerEmail);
+                    statement.setString(4, new BCryptPasswordEncoder().encode(customerPassword));
+                    statement.executeUpdate();
+                    try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                        if (!generatedKeys.next()) {
+                            throw new IllegalStateException("Failed to create default customer user");
+                        }
+                        userId = generatedKeys.getInt(1);
+                    }
+                }
+
+                try (PreparedStatement statement = connection.prepareStatement(UserSql.INSERT_CUSTOMER)) {
+                    statement.setInt(1, userId);
+                    statement.setString(2, null);
+                    statement.executeUpdate();
+                }
+            }
+
+            connection.commit();
+        } catch (SQLException ex) {
+            rollbackQuietly(connection);
+            throw new IllegalStateException("Failed to ensure default customer user", ex);
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
+    private void ensureDefaultStylist() {
+        Connection connection = null;
+        try {
+            connection = openConnection();
+            connection.setAutoCommit(false);
+
+            Integer userId = findUserIdByEmail(connection, stylistEmail);
+            if (userId == null) {
+                try (PreparedStatement statement = connection.prepareStatement(UserSql.INSERT_USER, Statement.RETURN_GENERATED_KEYS)) {
+                    statement.setString(1, stylistFirstName);
+                    statement.setString(2, stylistLastName);
+                    statement.setString(3, stylistEmail);
+                    statement.setString(4, new BCryptPasswordEncoder().encode(stylistPassword));
+                    statement.executeUpdate();
+                    try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                        if (!generatedKeys.next()) {
+                            throw new IllegalStateException("Failed to create default stylist user");
+                        }
+                        userId = generatedKeys.getInt(1);
+                    }
+                }
+
+                try (PreparedStatement statement = connection.prepareStatement(UserSql.UPSERT_STYLIST)) {
+                    statement.setInt(1, userId);
+                    statement.setInt(2, Speciality.Coloring.getValue());
+                    statement.executeUpdate();
+                }
+            }
+
+            connection.commit();
+        } catch (SQLException ex) {
+            rollbackQuietly(connection);
+            throw new IllegalStateException("Failed to ensure default stylist user", ex);
         } finally {
             closeQuietly(connection);
         }
