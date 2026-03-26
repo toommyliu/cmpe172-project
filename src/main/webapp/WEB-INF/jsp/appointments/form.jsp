@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Appointment" %>
-<%@ page import="edu.sjsu.cmpe172.salon.enums.Speciality" %>
+<%@ page import="edu.sjsu.cmpe172.salon.model.Service" %>
+<%@ page import="java.util.List" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
 <!DOCTYPE html>
 <html lang="en">
@@ -56,13 +57,13 @@
                             <select class="form-select" id="serviceId" name="serviceId" required>
                                 <option value="" disabled <%= appointment.getServiceId() == 0 ? "selected" : "" %>>Choose service</option>
                                 <%
-                                    for (Speciality s : Speciality.values()) {
-                                        if (s == Speciality.None) {
-                                            continue;
-                                        }
+                                    List<Service> services = (List<Service>) request.getAttribute("services");
+                                    if (services != null) {
+                                        for (Service s : services) {
                                 %>
-                                <option value="<%= s.getValue() %>" <%= appointment.getServiceId() == s.getValue() ? "selected" : "" %>><%= s.toString() %></option>
+                                <option value="<%= s.getId() %>" <%= appointment.getServiceId() == s.getId() ? "selected" : "" %>><%= s.getName() %></option>
                                 <%
+                                        }
                                     }
                                 %>
                             </select>

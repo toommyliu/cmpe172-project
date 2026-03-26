@@ -1,40 +1,38 @@
 package edu.sjsu.cmpe172.salon.model;
 
-import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.enums.UserRole;
 
-import java.util.List;
-
 public class Stylist extends User {
-    private Speciality speciality;
+    private int serviceId;
 
-    private List<Service> services;
+    private String serviceName;
 
     public Stylist() {
         super();
     }
-    public Stylist(Speciality speciality) {
+
+    public Stylist(int serviceId) {
         super();
-        this.speciality = speciality;
+        this.serviceId = serviceId;
     }
 
-    public Speciality getSpeciality() {
-        return speciality;
+    public int getServiceId() {
+        return serviceId;
     }
 
-    public void setSpeciality(Speciality speciality) {
-        this.speciality = speciality;
+    public void setServiceId(int serviceId) {
+        this.serviceId = serviceId;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public UserRole getRole() {
         return UserRole.Stylist;
-    }
-
-    public List<Service> getServices() {
-        return services;
-    }
-
-    public void setServices(List<Service> services) {
-        this.services = services;
     }
 }

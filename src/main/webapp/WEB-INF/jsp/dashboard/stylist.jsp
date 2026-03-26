@@ -2,7 +2,6 @@
 <%@ page import="edu.sjsu.cmpe172.salon.model.Appointment" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.AvailabilitySlot" %>
 <%@ page import="edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus" %>
-<%@ page import="edu.sjsu.cmpe172.salon.enums.Speciality" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
@@ -152,7 +151,10 @@
                                             List<Appointment> appointments = (List<Appointment>) request.getAttribute("appointments");
                                             if (appointments != null && !appointments.isEmpty()) {
                                                 for (Appointment apt : appointments) {
-                                                    String serviceName = Speciality.fromValue(apt.getServiceId()).toString();
+                                                    String serviceName = apt.getServiceName();
+                                                    if (serviceName == null || serviceName.isBlank()) {
+                                                        serviceName = "Service #" + apt.getServiceId();
+                                                    }
                                         %>
                                             <tr>
                                                 <td><strong>#<%= apt.getId() %></strong></td>

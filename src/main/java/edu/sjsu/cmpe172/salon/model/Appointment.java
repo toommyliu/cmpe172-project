@@ -12,6 +12,8 @@ public class Appointment {
     private int serviceId;
     private int availabilitySlotId;
 
+    private String serviceName;
+
     private String customerName;
 
     private String stylistName;
@@ -69,6 +71,14 @@ public class Appointment {
 
     public void setAvailabilitySlotId(int availabilitySlotId) {
         this.availabilitySlotId = availabilitySlotId;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public String getCustomerName() {

@@ -1,13 +1,11 @@
 package edu.sjsu.cmpe172.salon.controller;
 
-import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.model.Customer;
+import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
 import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
 import edu.sjsu.cmpe172.salon.service.AvailabilitySlotService;
 import edu.sjsu.cmpe172.salon.service.UserService;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,13 +19,16 @@ public class AuthController {
     private final UserService userService;
     private final AppointmentService appointmentService;
     private final AvailabilitySlotService availabilitySlotService;
+    private final ServiceRepository serviceRepository;
 
     public AuthController(UserService userService,
                           AppointmentService appointmentService,
-                          AvailabilitySlotService availabilitySlotService) {
+                          AvailabilitySlotService availabilitySlotService,
+                          ServiceRepository serviceRepository) {
         this.userService = userService;
         this.appointmentService = appointmentService;
         this.availabilitySlotService = availabilitySlotService;
+        this.serviceRepository = serviceRepository;
     }
 
     @GetMapping("/login")
@@ -80,6 +81,7 @@ public class AuthController {
         return switch (principal.getUserRole()) {
             case Admin -> {
                 model.addAttribute("users", userService.getAllUsers());
+                model.addAttribute("services", serviceRepository.findAll());
                 yield "dashboard/admin";
             }
             case Stylist -> {
@@ -89,9 +91,7 @@ public class AuthController {
             }
             case Customer -> {
                 model.addAttribute("appointments", appointmentService.getAppointmentsForCustomer(principal.getUserId()));
-                model.addAttribute("specialities", Arrays.stream(Speciality.values())
-                        .filter(s -> s != Speciality.None)
-                        .collect(Collectors.toList()));
+                model.addAttribute("services", serviceRepository.findAll());
                 model.addAttribute("stylists", userService.getAllStylists());
                 yield "dashboard/customer";
             }

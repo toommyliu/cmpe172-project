@@ -1,6 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
-<%@ page import="edu.sjsu.cmpe172.salon.enums.Speciality" %>
+<%@ page import="edu.sjsu.cmpe172.salon.model.Service" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.User" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Stylist" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
@@ -77,7 +77,7 @@
                                 <th>Name</th>
                                 <th>Email</th>
                                 <th class="text-center">Role</th>
-                                <th class="text-center">Specialty</th>
+                                <th class="text-center">Service</th>
                                 <th class="pe-4 text-end">Actions</th>
                             </tr>
                         </thead>
@@ -118,13 +118,17 @@
                                             <% if (csrfToken != null) { %>
                                                 <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
                                             <% } %>
-                                            <select class="form-select form-select-sm d-inline-block w-auto" name="specialityId" style="min-width: 140px;">
+                                            <select class="form-select form-select-sm d-inline-block w-auto" name="serviceId" style="min-width: 180px;">
                                                 <%
-                                                    for (Speciality speciality : Speciality.values()) {
-                                                        if (speciality == Speciality.None) continue;
+                                                    List<Service> services = (List<Service>) request.getAttribute("services");
+                                                    if (services != null) {
+                                                        for (Service service : services) {
                                                 %>
-                                                <option value="<%= speciality.getValue() %>" <%= (isStylist && ((Stylist)user).getSpeciality() == speciality) ? "selected" : "" %>><%= speciality.toString() %></option>
-                                                <% } %>
+                                                <option value="<%= service.getId() %>" <%= (isStylist && ((Stylist) user).getServiceId() == service.getId()) ? "selected" : "" %>><%= service.getName() %></option>
+                                                <%
+                                                        }
+                                                    }
+                                                %>
                                             </select>
                                         </form>
                                     <% } else { %>
@@ -139,7 +143,18 @@
                                     <% } else if (isCustomer) { %>
                                         <form method="post" action="/admin/users/assign-stylist">
                                             <input type="hidden" name="userId" value="<%= user.getId() %>">
-                                            <input type="hidden" name="specialityId" value="5"> <!-- Default to Styling -->
+                                            <select class="form-select form-select-sm d-inline-block w-auto me-2" name="serviceId" style="min-width: 180px;">
+                                                <%
+                                                    List<Service> services = (List<Service>) request.getAttribute("services");
+                                                    if (services != null) {
+                                                        for (Service service : services) {
+                                                %>
+                                                <option value="<%= service.getId() %>"><%= service.getName() %></option>
+                                                <%
+                                                        }
+                                                    }
+                                                %>
+                                            </select>
                                             <% if (csrfToken != null) { %>
                                                 <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
                                             <% } %>

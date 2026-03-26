@@ -1,6 +1,5 @@
 package edu.sjsu.cmpe172.salon.service;
 
-import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.enums.UserRole;
 import edu.sjsu.cmpe172.salon.model.Customer;
 import edu.sjsu.cmpe172.salon.model.Stylist;
@@ -40,7 +39,7 @@ public class UserService {
         return userRepository.findAllStylists();
     }
 
-    public boolean assignStylistRole(int userId, Speciality speciality) {
-        return userRepository.assignRole(userId, UserRole.Stylist, speciality);
+    public boolean assignStylistRole(int userId, int serviceId) {
+        return userRepository.assignRole(userId, UserRole.Stylist, serviceId);
     }
 }

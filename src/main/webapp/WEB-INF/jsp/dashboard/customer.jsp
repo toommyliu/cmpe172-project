@@ -1,7 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Appointment" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Stylist" %>
-<%@ page import="edu.sjsu.cmpe172.salon.enums.Speciality" %>
+<%@ page import="edu.sjsu.cmpe172.salon.model.Service" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <!DOCTYPE html>
@@ -58,7 +58,10 @@
                                                 List<Appointment> appointments = (List<Appointment>) request.getAttribute("appointments");
                                                 if (appointments != null && !appointments.isEmpty()) {
                                                     for (Appointment apt : appointments) {
-                                                        String serviceName = Speciality.fromValue(apt.getServiceId()).toString();
+                                                        String serviceName = apt.getServiceName();
+                                                        if (serviceName == null || serviceName.isBlank()) {
+                                                            serviceName = "Service #" + apt.getServiceId();
+                                                        }
                                             %>
                                                 <tr>
                                                     <td><strong>#<%= apt.getId() %></strong></td>
@@ -134,11 +137,11 @@
                                             <select class="form-select form-select-lg" id="service" name="serviceId" required>
                                                 <option selected disabled value="">Choose a service...</option>
                                                 <%
-                                                    List<Speciality> specialities = (List<Speciality>) request.getAttribute("specialities");
-                                                    if (specialities != null) {
-                                                        for (Speciality s : specialities) {
+                                                    List<Service> services = (List<Service>) request.getAttribute("services");
+                                                    if (services != null) {
+                                                        for (Service s : services) {
                                                 %>
-                                                    <option value="<%= s.getValue() %>"><%= s.toString() %></option>
+                                                    <option value="<%= s.getId() %>"><%= s.getName() %></option>
                                                 <%
                                                         }
                                                     }
@@ -154,7 +157,7 @@
                                                     if (stylists != null) {
                                                         for (Stylist s : stylists) {
                                                 %>
-                                                    <option value="<%= s.getId() %>" data-speciality-id="<%= s.getSpeciality().getValue() %>"><%= s.getFirstName() %> <%= s.getLastName() %> - <%= s.getSpeciality().toString() %></option>
+                                                    <option value="<%= s.getId() %>" data-service-id="<%= s.getServiceId() %>"><%= s.getFirstName() %> <%= s.getLastName() %> - <%= s.getServiceName() %></option>
                                                 <%
                                                         }
                                                     }
@@ -273,9 +276,9 @@
 
             const selectedStylistOption = stylistSelect.options[stylistSelect.selectedIndex];
             const selectedServiceId = serviceSelect.value;
-            const selectedStylistSpeciality = selectedStylistOption.getAttribute('data-speciality-id');
-            if (selectedServiceId !== selectedStylistSpeciality) {
-                alert('Please choose a stylist whose speciality matches your service.');
+            const selectedStylistService = selectedStylistOption.getAttribute('data-service-id');
+            if (selectedServiceId !== selectedStylistService) {
+                alert('Please choose a stylist whose service matches your selection.');
                 return;
             }
 

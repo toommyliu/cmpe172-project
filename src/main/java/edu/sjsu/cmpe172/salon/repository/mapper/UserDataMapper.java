@@ -1,6 +1,5 @@
 package edu.sjsu.cmpe172.salon.repository.mapper;
 
-import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.enums.UserRole;
 import edu.sjsu.cmpe172.salon.model.Admin;
 import edu.sjsu.cmpe172.salon.model.Customer;
@@ -45,7 +44,8 @@ public class UserDataMapper {
     private Stylist toStylist(ResultSet resultSet) throws SQLException {
         Stylist stylist = new Stylist();
         hydrateBase(resultSet, stylist);
-        stylist.setSpeciality(Speciality.fromValue(resultSet.getInt("speciality_id")));
+        stylist.setServiceId(resultSet.getInt("service_id"));
+        stylist.setServiceName(resultSet.getString("service_name"));
         return stylist;
     }
 

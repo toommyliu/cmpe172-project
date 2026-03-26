@@ -1,6 +1,5 @@
 package edu.sjsu.cmpe172.salon.repository;
 
-import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.enums.UserRole;
 import edu.sjsu.cmpe172.salon.model.Customer;
 import edu.sjsu.cmpe172.salon.model.Stylist;
@@ -20,5 +19,5 @@ public interface UserRepository {
 
     List<Stylist> findAllStylists();
 
-    boolean assignRole(int userId, UserRole role, Speciality speciality);
+    boolean assignRole(int userId, UserRole role, int serviceId);
 }

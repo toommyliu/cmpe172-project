@@ -14,14 +14,6 @@ public final class UserSql {
             )
             """;
 
-    public static final String CREATE_SPECIALITIES_TABLE = """
-            CREATE TABLE IF NOT EXISTS specialities (
-                id INT PRIMARY KEY,
-                code VARCHAR(50) NOT NULL UNIQUE,
-                display_name VARCHAR(120) NOT NULL
-            )
-            """;
-
     public static final String CREATE_CUSTOMERS_TABLE = """
             CREATE TABLE IF NOT EXISTS customers (
                 user_id INT PRIMARY KEY,
@@ -35,12 +27,12 @@ public final class UserSql {
     public static final String CREATE_STYLISTS_TABLE = """
             CREATE TABLE IF NOT EXISTS stylists (
                 user_id INT PRIMARY KEY,
-                speciality_id INT NOT NULL,
+                service_id INT NOT NULL,
                 CONSTRAINT fk_stylists_users
                     FOREIGN KEY (user_id) REFERENCES users(id)
                     ON DELETE CASCADE,
-                CONSTRAINT fk_stylists_specialities
-                    FOREIGN KEY (speciality_id) REFERENCES specialities(id)
+                CONSTRAINT fk_stylists_services
+                    FOREIGN KEY (service_id) REFERENCES services(id)
             )
             """;
 
@@ -53,14 +45,6 @@ public final class UserSql {
             )
             """;
 
-    public static final String UPSERT_SPECIALITY = """
-            INSERT INTO specialities (id, code, display_name)
-            VALUES (?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                code = VALUES(code),
-                display_name = VALUES(display_name)
-            """;
-
     public static final String FIND_BY_EMAIL = """
             SELECT
                 u.id,
@@ -69,7 +53,8 @@ public final class UserSql {
                 u.email_address,
                 u.password_hash,
                 c.phone_number,
-                s.speciality_id,
+                s.service_id,
+                svc.name AS service_name,
                 CASE
                     WHEN a.user_id IS NOT NULL THEN 100
                     WHEN s.user_id IS NOT NULL THEN 2
@@ -79,6 +64,7 @@ public final class UserSql {
             FROM users u
             LEFT JOIN customers c ON c.user_id = u.id
             LEFT JOIN stylists s ON s.user_id = u.id
+            LEFT JOIN services svc ON svc.id = s.service_id
             LEFT JOIN admins a ON a.user_id = u.id
             WHERE u.email_address = ?
             """;
@@ -91,7 +77,8 @@ public final class UserSql {
                 u.email_address,
                 u.password_hash,
                 c.phone_number,
-                s.speciality_id,
+                s.service_id,
+                svc.name AS service_name,
                 CASE
                     WHEN a.user_id IS NOT NULL THEN 100
                     WHEN s.user_id IS NOT NULL THEN 2
@@ -101,6 +88,7 @@ public final class UserSql {
             FROM users u
             LEFT JOIN customers c ON c.user_id = u.id
             LEFT JOIN stylists s ON s.user_id = u.id
+            LEFT JOIN services svc ON svc.id = s.service_id
             LEFT JOIN admins a ON a.user_id = u.id
             WHERE u.id = ?
             """;
@@ -113,7 +101,8 @@ public final class UserSql {
                 u.email_address,
                 u.password_hash,
                 c.phone_number,
-                s.speciality_id,
+                s.service_id,
+                svc.name AS service_name,
                 CASE
                     WHEN a.user_id IS NOT NULL THEN 100
                     WHEN s.user_id IS NOT NULL THEN 2
@@ -123,6 +112,7 @@ public final class UserSql {
             FROM users u
             LEFT JOIN customers c ON c.user_id = u.id
             LEFT JOIN stylists s ON s.user_id = u.id
+            LEFT JOIN services svc ON svc.id = s.service_id
             LEFT JOIN admins a ON a.user_id = u.id
             ORDER BY u.id
             """;
@@ -135,10 +125,12 @@ public final class UserSql {
                 u.email_address,
                 u.password_hash,
                 NULL AS phone_number,
-                s.speciality_id,
+                s.service_id,
+                svc.name AS service_name,
                 2 AS role_value
             FROM users u
             INNER JOIN stylists s ON s.user_id = u.id
+            INNER JOIN services svc ON svc.id = s.service_id
             ORDER BY u.first_name, u.last_name
             """;
 
@@ -170,6 +162,10 @@ public final class UserSql {
             SELECT 1 FROM admins WHERE user_id = ?
             """;
 
+    public static final String SERVICE_EXISTS = """
+            SELECT 1 FROM services WHERE id = ?
+            """;
+
     public static final String DELETE_CUSTOMER_ROLE = """
             DELETE FROM customers WHERE user_id = ?
             """;
@@ -179,9 +175,9 @@ public final class UserSql {
             """;
 
     public static final String UPSERT_STYLIST = """
-            INSERT INTO stylists (user_id, speciality_id)
+            INSERT INTO stylists (user_id, service_id)
             VALUES (?, ?)
             ON DUPLICATE KEY UPDATE
-                speciality_id = VALUES(speciality_id)
+                service_id = VALUES(service_id)
             """;
 }

@@ -2,6 +2,7 @@ package edu.sjsu.cmpe172.salon.controller;
 
 import edu.sjsu.cmpe172.salon.enums.UserRole;
 import edu.sjsu.cmpe172.salon.model.Appointment;
+import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
 import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
 import edu.sjsu.cmpe172.salon.service.AvailabilitySlotService;
@@ -30,10 +31,14 @@ import java.util.Map;
 public class AppointmentController {
     private final AppointmentService service;
     private final AvailabilitySlotService availabilitySlotService;
+    private final ServiceRepository serviceRepository;
 
-    public AppointmentController(AppointmentService service, AvailabilitySlotService availabilitySlotService) {
+    public AppointmentController(AppointmentService service,
+                                 AvailabilitySlotService availabilitySlotService,
+                                 ServiceRepository serviceRepository) {
         this.service = service;
         this.availabilitySlotService = availabilitySlotService;
+        this.serviceRepository = serviceRepository;
     }
 
     @GetMapping("/appointments")
@@ -54,6 +59,7 @@ public class AppointmentController {
         model.addAttribute("appointment", new Appointment());
         model.addAttribute("formAction", "/appointments");
         model.addAttribute("pageTitle", "Create Appointment");
+        model.addAttribute("services", serviceRepository.findAll());
         return "appointments/form";
     }
 
@@ -83,6 +89,7 @@ public class AppointmentController {
                     model.addAttribute("appointment", appointment);
                     model.addAttribute("formAction", "/appointments/" + id);
                     model.addAttribute("pageTitle", "Edit Appointment");
+                    model.addAttribute("services", serviceRepository.findAll());
                     return "appointments/form";
                 })
                 .orElseGet(() -> {

@@ -1,13 +1,13 @@
 package edu.sjsu.cmpe172.salon.service;
 
 import edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus;
-import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import edu.sjsu.cmpe172.salon.model.AvailabilitySlot;
 import edu.sjsu.cmpe172.salon.model.Stylist;
 import edu.sjsu.cmpe172.salon.model.User;
 import edu.sjsu.cmpe172.salon.repository.AppointmentRepository;
 import edu.sjsu.cmpe172.salon.repository.AvailabilitySlotRepository;
+import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
 import edu.sjsu.cmpe172.salon.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -19,13 +19,16 @@ import java.util.Optional;
 public class AppointmentService {
     private final AppointmentRepository repository;
     private final AvailabilitySlotRepository availabilitySlotRepository;
+    private final ServiceRepository serviceRepository;
     private final UserRepository userRepository;
 
     public AppointmentService(AppointmentRepository repository,
                               AvailabilitySlotRepository availabilitySlotRepository,
+                              ServiceRepository serviceRepository,
                               UserRepository userRepository) {
         this.repository = repository;
         this.availabilitySlotRepository = availabilitySlotRepository;
+        this.serviceRepository = serviceRepository;
         this.userRepository = userRepository;
     }
 
@@ -67,11 +70,10 @@ public class AppointmentService {
             throw new IllegalArgumentException("Selected user is not a stylist.");
         }
 
-        Speciality expectedSpeciality = Speciality.fromValue(appointment.getServiceId());
-        if (expectedSpeciality == Speciality.None) {
+        if (!serviceRepository.existsById(appointment.getServiceId())) {
             throw new IllegalArgumentException("A valid service selection is required.");
         }
-        if (stylist.getSpeciality() != expectedSpeciality) {
+        if (stylist.getServiceId() != appointment.getServiceId()) {
             throw new IllegalArgumentException("Selected stylist does not provide the chosen service.");
         }
 

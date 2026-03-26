@@ -1,12 +1,12 @@
 package edu.sjsu.cmpe172.salon.repository.mysql;
 
-import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.enums.UserRole;
 import edu.sjsu.cmpe172.salon.model.Customer;
 import edu.sjsu.cmpe172.salon.model.Stylist;
 import edu.sjsu.cmpe172.salon.model.User;
 import edu.sjsu.cmpe172.salon.repository.UserRepository;
 import edu.sjsu.cmpe172.salon.repository.mapper.UserDataMapper;
+import edu.sjsu.cmpe172.salon.repository.sql.ServiceSql;
 import edu.sjsu.cmpe172.salon.repository.sql.UserSql;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -75,7 +75,6 @@ public class MySqlUserRepository implements UserRepository {
         this.stylistLastName = stylistLastName;
         this.dataMapper = dataMapper;
         ensureSchema();
-        seedSpecialities();
         if (bootstrapEnabled) {
             ensureDefaultAdmin();
             ensureDefaultCustomer();
@@ -184,18 +183,23 @@ public class MySqlUserRepository implements UserRepository {
     }
 
     @Override
-    public boolean assignRole(int userId, UserRole role, Speciality speciality) {
+    public boolean assignRole(int userId, UserRole role, int serviceId) {
         if (role != UserRole.Stylist) {
             throw new IllegalArgumentException("Only stylist role assignment is supported.");
         }
-        if (speciality == null || speciality == Speciality.None) {
-            throw new IllegalArgumentException("Speciality is required for stylist role.");
+        if (serviceId <= 0) {
+            throw new IllegalArgumentException("Service is required for stylist role.");
         }
 
         Connection connection = null;
         try {
             connection = openConnection();
             connection.setAutoCommit(false);
+
+            if (!exists(connection, UserSql.SERVICE_EXISTS, serviceId)) {
+                connection.rollback();
+                throw new IllegalArgumentException("Selected service does not exist.");
+            }
 
             if (!exists(connection, UserSql.USER_EXISTS, userId)) {
                 connection.rollback();
@@ -214,7 +218,7 @@ public class MySqlUserRepository implements UserRepository {
 
             try (PreparedStatement statement = connection.prepareStatement(UserSql.UPSERT_STYLIST)) {
                 statement.setInt(1, userId);
-                statement.setInt(2, speciality.getValue());
+                statement.setInt(2, serviceId);
                 statement.executeUpdate();
             }
 
@@ -245,7 +249,8 @@ public class MySqlUserRepository implements UserRepository {
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate(UserSql.CREATE_USERS_TABLE);
-            statement.executeUpdate(UserSql.CREATE_SPECIALITIES_TABLE);
+            statement.executeUpdate(ServiceSql.CREATE_TABLE);
+            seedDefaultServices(connection);
             statement.executeUpdate(UserSql.CREATE_CUSTOMERS_TABLE);
             statement.executeUpdate(UserSql.CREATE_STYLISTS_TABLE);
             statement.executeUpdate(UserSql.CREATE_ADMINS_TABLE);
@@ -253,6 +258,40 @@ public class MySqlUserRepository implements UserRepository {
             throw new IllegalStateException("Failed to initialize users schema", ex);
         }
     }
+
+    private void seedDefaultServices(Connection connection) throws SQLException {
+        try (PreparedStatement countStatement = connection.prepareStatement(ServiceSql.COUNT_ALL);
+             ResultSet countResult = countStatement.executeQuery()) {
+            if (countResult.next() && countResult.getInt(1) > 0) {
+                return;
+            }
+        }
+
+        try (PreparedStatement statement = connection.prepareStatement(ServiceSql.UPSERT_SERVICE)) {
+            bindService(statement, 1, "coloring", "Coloring", "Hair coloring services.", 120.00);
+            bindService(statement, 2, "cutting", "Cutting", "Hair cutting services.", 70.00);
+            bindService(statement, 3, "extensions", "Extensions", "Hair extension services.", 220.00);
+            bindService(statement, 4, "chemical_treatments", "Chemical Treatments", "Smoothing, perms, and related treatments.", 180.00);
+            bindService(statement, 5, "styling", "Styling", "Styling and blowout services.", 60.00);
+            bindService(statement, 6, "barbering", "Barbering", "Barbering and grooming services.", 55.00);
+            statement.executeBatch();
+        }
+    }
+
+    private void bindService(PreparedStatement statement,
+                             int id,
+                             String code,
+                             String name,
+                             String description,
+                             double price) throws SQLException {
+        statement.setInt(1, id);
+        statement.setString(2, code);
+        statement.setString(3, name);
+        statement.setString(4, description);
+        statement.setDouble(5, price);
+        statement.addBatch();
+    }
+
 
     private void ensureDefaultAdmin() {
         Connection connection = null;
@@ -363,7 +402,7 @@ public class MySqlUserRepository implements UserRepository {
 
                 try (PreparedStatement statement = connection.prepareStatement(UserSql.UPSERT_STYLIST)) {
                     statement.setInt(1, userId);
-                    statement.setInt(2, Speciality.Coloring.getValue());
+                    statement.setInt(2, 1);
                     statement.executeUpdate();
                 }
             }
@@ -386,24 +425,6 @@ public class MySqlUserRepository implements UserRepository {
                 }
                 return null;
             }
-        }
-    }
-
-    private void seedSpecialities() {
-        try (Connection connection = openConnection();
-             PreparedStatement statement = connection.prepareStatement(UserSql.UPSERT_SPECIALITY)) {
-            for (Speciality speciality : Speciality.values()) {
-                if (speciality == Speciality.None) {
-                    continue;
-                }
-                statement.setInt(1, speciality.getValue());
-                statement.setString(2, speciality.name());
-                statement.setString(3, speciality.toString());
-                statement.addBatch();
-            }
-            statement.executeBatch();
-        } catch (SQLException ex) {
-            throw new IllegalStateException("Failed to seed specialities", ex);
         }
     }
 

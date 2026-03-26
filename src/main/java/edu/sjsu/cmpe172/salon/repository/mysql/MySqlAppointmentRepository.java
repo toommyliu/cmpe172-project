@@ -6,6 +6,7 @@ import edu.sjsu.cmpe172.salon.repository.AppointmentRepository;
 import edu.sjsu.cmpe172.salon.repository.mapper.AppointmentDataMapper;
 import edu.sjsu.cmpe172.salon.repository.sql.AppointmentSql;
 import edu.sjsu.cmpe172.salon.repository.sql.AvailabilitySlotSql;
+import edu.sjsu.cmpe172.salon.repository.sql.ServiceSql;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
@@ -220,6 +221,7 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
     private void ensureSchema() {
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
+            statement.executeUpdate(ServiceSql.CREATE_TABLE);
             statement.executeUpdate(AppointmentSql.CREATE_TABLE);
         } catch (SQLException ex) {
             throw new IllegalStateException("Failed to initialize appointments schema", ex);

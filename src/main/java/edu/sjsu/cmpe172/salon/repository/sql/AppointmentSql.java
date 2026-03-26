@@ -10,7 +10,9 @@ public final class AppointmentSql {
                 customer_user_id INT NOT NULL,
                 stylist_user_id INT NOT NULL,
                 service_id INT NOT NULL,
-                availability_slot_id INT NOT NULL
+                availability_slot_id INT NOT NULL,
+                CONSTRAINT fk_appointments_services
+                    FOREIGN KEY (service_id) REFERENCES services(id)
             )
             """;
 
@@ -20,6 +22,7 @@ public final class AppointmentSql {
                 a.customer_user_id,
                 a.stylist_user_id,
                 a.service_id,
+                svc.name AS service_name,
                 a.availability_slot_id,
                 CONCAT(cu.first_name, ' ', cu.last_name) AS customer_name,
                 CONCAT(su.first_name, ' ', su.last_name) AS stylist_name,
@@ -28,6 +31,7 @@ public final class AppointmentSql {
             FROM appointments a
             INNER JOIN users cu ON cu.id = a.customer_user_id
             INNER JOIN users su ON su.id = a.stylist_user_id
+            INNER JOIN services svc ON svc.id = a.service_id
             LEFT JOIN availability_slots s ON s.id = a.availability_slot_id
             ORDER BY a.id
             """;
@@ -38,6 +42,7 @@ public final class AppointmentSql {
                 a.customer_user_id,
                 a.stylist_user_id,
                 a.service_id,
+                svc.name AS service_name,
                 a.availability_slot_id,
                 CONCAT(cu.first_name, ' ', cu.last_name) AS customer_name,
                 CONCAT(su.first_name, ' ', su.last_name) AS stylist_name,
@@ -46,6 +51,7 @@ public final class AppointmentSql {
             FROM appointments a
             INNER JOIN users cu ON cu.id = a.customer_user_id
             INNER JOIN users su ON su.id = a.stylist_user_id
+            INNER JOIN services svc ON svc.id = a.service_id
             LEFT JOIN availability_slots s ON s.id = a.availability_slot_id
             WHERE a.id = ?
             """;
@@ -56,6 +62,7 @@ public final class AppointmentSql {
                 a.customer_user_id,
                 a.stylist_user_id,
                 a.service_id,
+                svc.name AS service_name,
                 a.availability_slot_id,
                 CONCAT(cu.first_name, ' ', cu.last_name) AS customer_name,
                 CONCAT(su.first_name, ' ', su.last_name) AS stylist_name,
@@ -64,6 +71,7 @@ public final class AppointmentSql {
             FROM appointments a
             INNER JOIN users cu ON cu.id = a.customer_user_id
             INNER JOIN users su ON su.id = a.stylist_user_id
+            INNER JOIN services svc ON svc.id = a.service_id
             LEFT JOIN availability_slots s ON s.id = a.availability_slot_id
             WHERE a.customer_user_id = ?
             ORDER BY a.id
@@ -75,6 +83,7 @@ public final class AppointmentSql {
                 a.customer_user_id,
                 a.stylist_user_id,
                 a.service_id,
+                svc.name AS service_name,
                 a.availability_slot_id,
                 CONCAT(cu.first_name, ' ', cu.last_name) AS customer_name,
                 CONCAT(su.first_name, ' ', su.last_name) AS stylist_name,
@@ -83,9 +92,16 @@ public final class AppointmentSql {
             FROM appointments a
             INNER JOIN users cu ON cu.id = a.customer_user_id
             INNER JOIN users su ON su.id = a.stylist_user_id
+            INNER JOIN services svc ON svc.id = a.service_id
             LEFT JOIN availability_slots s ON s.id = a.availability_slot_id
             WHERE a.stylist_user_id = ?
             ORDER BY a.id
+            """;
+
+    public static final String SERVICE_EXISTS = """
+            SELECT 1
+            FROM services
+            WHERE id = ?
             """;
 
     public static final String INSERT = """
