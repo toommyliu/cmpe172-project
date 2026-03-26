@@ -65,4 +65,12 @@ public class Provider {
     public void setOpenTime(Timestamp openTime) {
         this.openTime = openTime;
     }
+
+    public Timestamp getCloseTime() {
+        return closeTime;
+    }
+
+    public void setCloseTime(Timestamp closeTime) {
+        this.closeTime = closeTime;
+    }
 }

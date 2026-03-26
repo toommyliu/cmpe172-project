@@ -1,7 +1,9 @@
 package edu.sjsu.cmpe172.salon.controller;
 
 import edu.sjsu.cmpe172.salon.model.Customer;
+import edu.sjsu.cmpe172.salon.model.Provider;
 import edu.sjsu.cmpe172.salon.model.Stylist;
+import edu.sjsu.cmpe172.salon.repository.ProviderRepository;
 import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
 import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
@@ -21,15 +23,18 @@ public class AuthController {
     private final AppointmentService appointmentService;
     private final AvailabilitySlotService availabilitySlotService;
     private final ServiceRepository serviceRepository;
+    private final ProviderRepository providerRepository;
 
     public AuthController(UserService userService,
                           AppointmentService appointmentService,
                           AvailabilitySlotService availabilitySlotService,
-                          ServiceRepository serviceRepository) {
+                          ServiceRepository serviceRepository,
+                          ProviderRepository providerRepository) {
         this.userService = userService;
         this.appointmentService = appointmentService;
         this.availabilitySlotService = availabilitySlotService;
         this.serviceRepository = serviceRepository;
+        this.providerRepository = providerRepository;
     }
 
     @GetMapping("/login")
@@ -83,6 +88,13 @@ public class AuthController {
             case Admin -> {
                 model.addAttribute("users", userService.getAllUsers());
                 model.addAttribute("services", serviceRepository.findAll());
+                model.addAttribute("provider", providerRepository.findById(1).orElseGet(() -> {
+                    Provider provider = new Provider();
+                    // since we only support one provider
+                    // we can just hardcode the ID here
+                    provider.setId(1);
+                    return provider;
+                }));
                 yield "dashboard/admin";
             }
             case Stylist -> {

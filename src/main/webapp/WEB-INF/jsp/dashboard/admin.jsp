@@ -1,9 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Service" %>
+<%@ page import="edu.sjsu.cmpe172.salon.model.Provider" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.User" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Stylist" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
+<%@ page import="java.text.SimpleDateFormat" %>
 <!DOCTYPE html>
 <html lang="en">
 <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
@@ -23,6 +25,14 @@
             CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
             String successMessage = (String) request.getAttribute("successMessage");
             String errorMessage = (String) request.getAttribute("errorMessage");
+            Provider provider = (Provider) request.getAttribute("provider");
+            if (provider == null) {
+                provider = new Provider();
+                provider.setId(1);
+            }
+            SimpleDateFormat providerDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+            String providerOpenTime = provider.getOpenTime() == null ? "" : providerDateTimeFormat.format(provider.getOpenTime());
+            String providerCloseTime = provider.getCloseTime() == null ? "" : providerDateTimeFormat.format(provider.getCloseTime());
             if (successMessage != null) {
         %>
             <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
@@ -40,6 +50,47 @@
         <%
             }
         %>
+
+        <div class="card border-0 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h2 class="h5 mb-0 fw-bold">Provider Information</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/admin/provider" class="row g-3">
+                    <input type="hidden" name="id" value="<%= provider.getId() > 0 ? provider.getId() : 1 %>">
+                    <% if (csrfToken != null) { %>
+                        <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                    <% } %>
+                    <div class="col-12">
+                        <label for="providerName" class="form-label">Name</label>
+                        <input id="providerName" type="text" name="name" class="form-control" value="<%= provider.getName() == null ? "" : provider.getName() %>" required>
+                    </div>
+                    <div class="col-12">
+                        <label for="providerAddress" class="form-label">Address</label>
+                        <input id="providerAddress" type="text" name="address" class="form-control" value="<%= provider.getAddress() == null ? "" : provider.getAddress() %>">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="providerPhone" class="form-label">Phone Number</label>
+                        <input id="providerPhone" type="text" name="phoneNumber" class="form-control" value="<%= provider.getPhoneNumber() == null ? "" : provider.getPhoneNumber() %>">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="providerEmail" class="form-label">Email Address</label>
+                        <input id="providerEmail" type="email" name="emailAddress" class="form-control" value="<%= provider.getEmailAddress() == null ? "" : provider.getEmailAddress() %>">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="providerOpenTime" class="form-label">Open Time</label>
+                        <input id="providerOpenTime" type="datetime-local" name="openTime" class="form-control" value="<%= providerOpenTime %>">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="providerCloseTime" class="form-label">Close Time</label>
+                        <input id="providerCloseTime" type="datetime-local" name="closeTime" class="form-control" value="<%= providerCloseTime %>">
+                    </div>
+                    <div class="col-12 text-end">
+                        <button class="btn btn-primary" type="submit">Save Provider</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <div class="card border-0">
             <div class="card-header bg-white border-bottom py-3">
