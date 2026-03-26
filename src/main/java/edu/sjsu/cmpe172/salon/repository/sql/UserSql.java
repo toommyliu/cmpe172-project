@@ -55,6 +55,7 @@ public final class UserSql {
                 c.phone_number,
                 s.service_id,
                 svc.name AS service_name,
+                svc.duration_minutes AS service_duration_minutes,
                 CASE
                     WHEN a.user_id IS NOT NULL THEN 100
                     WHEN s.user_id IS NOT NULL THEN 2
@@ -79,6 +80,7 @@ public final class UserSql {
                 c.phone_number,
                 s.service_id,
                 svc.name AS service_name,
+                svc.duration_minutes AS service_duration_minutes,
                 CASE
                     WHEN a.user_id IS NOT NULL THEN 100
                     WHEN s.user_id IS NOT NULL THEN 2
@@ -103,6 +105,7 @@ public final class UserSql {
                 c.phone_number,
                 s.service_id,
                 svc.name AS service_name,
+                svc.duration_minutes AS service_duration_minutes,
                 CASE
                     WHEN a.user_id IS NOT NULL THEN 100
                     WHEN s.user_id IS NOT NULL THEN 2
@@ -127,6 +130,7 @@ public final class UserSql {
                 NULL AS phone_number,
                 s.service_id,
                 svc.name AS service_name,
+                svc.duration_minutes AS service_duration_minutes,
                 2 AS role_value
             FROM users u
             INNER JOIN stylists s ON s.user_id = u.id

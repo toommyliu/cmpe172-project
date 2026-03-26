@@ -11,15 +11,18 @@ public class Service {
 
     private double price;
 
+    private int durationMinutes;
+
     public Service() {
     }
 
-    public Service(int id, String code, String name, String description, double price) {
+    public Service(int id, String code, String name, String description, double price, int durationMinutes) {
         this.id = id;
         this.code = code;
         this.name = name;
         this.description = description;
         this.price = price;
+        this.durationMinutes = durationMinutes;
     }
 
     public int getId() {
@@ -60,5 +63,13 @@ public class Service {
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    public int getDurationMinutes() {
+        return durationMinutes;
+    }
+
+    public void setDurationMinutes(int durationMinutes) {
+        this.durationMinutes = durationMinutes;
     }
 }

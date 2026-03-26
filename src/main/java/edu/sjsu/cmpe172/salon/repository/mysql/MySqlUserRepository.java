@@ -268,12 +268,12 @@ public class MySqlUserRepository implements UserRepository {
         }
 
         try (PreparedStatement statement = connection.prepareStatement(ServiceSql.UPSERT_SERVICE)) {
-            bindService(statement, 1, "coloring", "Coloring", "Hair coloring services.", 120.00);
-            bindService(statement, 2, "cutting", "Cutting", "Hair cutting services.", 70.00);
-            bindService(statement, 3, "extensions", "Extensions", "Hair extension services.", 220.00);
-            bindService(statement, 4, "chemical_treatments", "Chemical Treatments", "Smoothing, perms, and related treatments.", 180.00);
-            bindService(statement, 5, "styling", "Styling", "Styling and blowout services.", 60.00);
-            bindService(statement, 6, "barbering", "Barbering", "Barbering and grooming services.", 55.00);
+            bindService(statement, 1, "coloring", "Coloring", "Hair coloring services.", 120.00, 90);
+            bindService(statement, 2, "cutting", "Cutting", "Hair cutting services.", 70.00, 60);
+            bindService(statement, 3, "extensions", "Extensions", "Hair extension services.", 220.00, 120);
+            bindService(statement, 4, "chemical_treatments", "Chemical Treatments", "Smoothing, perms, and related treatments.", 180.00, 120);
+            bindService(statement, 5, "styling", "Styling", "Styling and blowout services.", 60.00, 45);
+            bindService(statement, 6, "barbering", "Barbering", "Barbering and grooming services.", 55.00, 30);
             statement.executeBatch();
         }
     }
@@ -283,12 +283,14 @@ public class MySqlUserRepository implements UserRepository {
                              String code,
                              String name,
                              String description,
-                             double price) throws SQLException {
+                             double price,
+                             int durationMinutes) throws SQLException {
         statement.setInt(1, id);
         statement.setString(2, code);
         statement.setString(3, name);
         statement.setString(4, description);
         statement.setDouble(5, price);
+        statement.setInt(6, durationMinutes);
         statement.addBatch();
     }
 

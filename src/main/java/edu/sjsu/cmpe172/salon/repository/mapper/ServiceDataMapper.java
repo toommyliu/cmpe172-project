@@ -16,6 +16,7 @@ public class ServiceDataMapper {
         service.setName(resultSet.getString("name"));
         service.setDescription(resultSet.getString("description"));
         service.setPrice(resultSet.getDouble("price"));
+        service.setDurationMinutes(resultSet.getInt("duration_minutes"));
         return service;
     }
 
@@ -25,5 +26,6 @@ public class ServiceDataMapper {
         statement.setString(3, service.getName());
         statement.setString(4, service.getDescription());
         statement.setDouble(5, service.getPrice());
+        statement.setInt(6, service.getDurationMinutes());
     }
 }

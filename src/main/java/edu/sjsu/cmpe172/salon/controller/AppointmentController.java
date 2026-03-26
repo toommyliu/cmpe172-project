@@ -2,6 +2,7 @@ package edu.sjsu.cmpe172.salon.controller;
 
 import edu.sjsu.cmpe172.salon.enums.UserRole;
 import edu.sjsu.cmpe172.salon.model.Appointment;
+import edu.sjsu.cmpe172.salon.model.Stylist;
 import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
 import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
@@ -20,12 +21,16 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.HttpStatus;
 
-import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 public class AppointmentController {
@@ -139,15 +144,24 @@ public class AppointmentController {
     @GetMapping("/customer/stylists/{stylistId}/available-slots")
     @ResponseBody
     public List<Map<String, String>> getAvailableSlotsForStylist(@PathVariable int stylistId,
+                                                                  @RequestParam(required = false) Integer serviceId,
                                                                   @AuthenticationPrincipal SalonUserPrincipal principal) {
         if (principal == null || (principal.getUserRole() != UserRole.Customer && principal.getUserRole() != UserRole.Admin)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized access.");
         }
 
+        final Integer expectedDurationMinutes = serviceId == null
+                ? null
+                : serviceRepository.findById(serviceId)
+                .map(edu.sjsu.cmpe172.salon.model.Service::getDurationMinutes)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid service selected."));
+
         DateTimeFormatter labelFormatter = DateTimeFormatter.ofPattern("EEE, MMM d h:mm a");
         DateTimeFormatter endFormatter = DateTimeFormatter.ofPattern("h:mm a");
         return availabilitySlotService.getAvailableSlotsForStylist(stylistId)
                 .stream()
+                .filter(slot -> expectedDurationMinutes == null
+                        || Duration.between(slot.getStartDateTime(), slot.getEndDateTime()).toMinutes() == expectedDurationMinutes)
                 .map(slot -> Map.of(
                         "id", String.valueOf(slot.getId()),
                         "startDateTime", slot.getStartDateTime().toString(),
@@ -164,21 +178,80 @@ public class AppointmentController {
     @PostMapping("/stylist/availability")
     public String createAvailabilitySlot(@AuthenticationPrincipal SalonUserPrincipal principal,
                                          @RequestParam String startDateTime,
-                                         @RequestParam String endDateTime,
                                          RedirectAttributes redirectAttributes) {
         if (principal == null || principal.getUserRole() != UserRole.Stylist) {
             redirectAttributes.addFlashAttribute("errorMessage", "Unauthorized action.");
             return "redirect:/dashboard";
         }
 
+        if (!(principal.getUser() instanceof Stylist stylist)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Unable to resolve stylist profile.");
+            return "redirect:/dashboard";
+        }
+
         try {
             LocalDateTime start = parseDateTimeInput(startDateTime);
-            LocalDateTime end = parseDateTimeInput(endDateTime);
+            int durationMinutes = resolveServiceDurationMinutes(stylist.getServiceId());
+            LocalDateTime end = start.plusMinutes(durationMinutes);
             availabilitySlotService.createSlot(principal.getUserId(), start, end);
             redirectAttributes.addFlashAttribute("successMessage", "Availability slot created.");
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
+        return "redirect:/dashboard";
+    }
+
+    @PostMapping("/stylist/availability/bulk")
+    public String createBulkAvailabilitySlots(@AuthenticationPrincipal SalonUserPrincipal principal,
+                                              @RequestParam String startDate,
+                                              @RequestParam String endDate,
+                                              @RequestParam String dayStartTime,
+                                              @RequestParam String dayEndTime,
+                                              @RequestParam(required = false) List<String> weekdays,
+                                              RedirectAttributes redirectAttributes) {
+        if (principal == null || principal.getUserRole() != UserRole.Stylist) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Unauthorized action.");
+            return "redirect:/dashboard";
+        }
+
+        if (!(principal.getUser() instanceof Stylist stylist)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Unable to resolve stylist profile.");
+            return "redirect:/dashboard";
+        }
+
+        try {
+            LocalDate parsedStartDate = LocalDate.parse(startDate);
+            LocalDate parsedEndDate = LocalDate.parse(endDate);
+            LocalTime parsedDayStartTime = LocalTime.parse(dayStartTime);
+            LocalTime parsedDayEndTime = LocalTime.parse(dayEndTime);
+            Set<DayOfWeek> selectedWeekdays = parseWeekdays(weekdays);
+            int slotDurationMinutes = resolveServiceDurationMinutes(stylist.getServiceId());
+
+            AvailabilitySlotService.BulkCreateResult result = availabilitySlotService.createBulkSlotsForStylist(
+                    principal.getUserId(),
+                    parsedStartDate,
+                    parsedEndDate,
+                    selectedWeekdays,
+                    parsedDayStartTime,
+                    parsedDayEndTime,
+                    slotDurationMinutes
+            );
+
+            if (result.createdCount() > 0) {
+                redirectAttributes.addFlashAttribute(
+                        "successMessage",
+                        "Bulk availability created: " + result.createdCount() + " slot(s). Skipped: " + result.skippedCount() + "."
+                );
+            } else {
+                redirectAttributes.addFlashAttribute(
+                        "errorMessage",
+                        "No slots were created. Skipped: " + result.skippedCount() + "."
+                );
+            }
+        } catch (IllegalArgumentException | DateTimeParseException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+
         return "redirect:/dashboard";
     }
 
@@ -210,5 +283,27 @@ public class AppointmentController {
                 throw new IllegalArgumentException("Invalid date-time format.");
             }
         }
+    }
+
+    private Set<DayOfWeek> parseWeekdays(List<String> weekdays) {
+        if (weekdays == null || weekdays.isEmpty()) {
+            throw new IllegalArgumentException("Select at least one weekday.");
+        }
+
+        java.util.Set<DayOfWeek> parsedDays = new java.util.HashSet<>();
+        for (String day : weekdays) {
+            try {
+                parsedDays.add(DayOfWeek.valueOf(day));
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Invalid weekday value.");
+            }
+        }
+        return parsedDays;
+    }
+
+    private int resolveServiceDurationMinutes(int serviceId) {
+        return serviceRepository.findById(serviceId)
+                .map(edu.sjsu.cmpe172.salon.model.Service::getDurationMinutes)
+                .orElseThrow(() -> new IllegalArgumentException("Assigned service not found."));
     }
 }

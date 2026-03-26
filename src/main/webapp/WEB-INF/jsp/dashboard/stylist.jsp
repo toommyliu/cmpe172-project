@@ -21,6 +21,11 @@
             CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
             String successMessage = (String) request.getAttribute("successMessage");
             String errorMessage = (String) request.getAttribute("errorMessage");
+            String stylistServiceName = (String) request.getAttribute("stylistServiceName");
+            Integer stylistServiceDurationMinutes = (Integer) request.getAttribute("stylistServiceDurationMinutes");
+            if (stylistServiceDurationMinutes == null || stylistServiceDurationMinutes <= 0) {
+                stylistServiceDurationMinutes = 60;
+            }
             DateTimeFormatter slotDateFormatter = DateTimeFormatter.ofPattern("EEE, MMM d h:mm a");
             DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("h:mm a");
         %>
@@ -37,27 +42,96 @@
                     <div class="card-body p-4 p-md-5">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
                             <div>
-                                <h2 class="h4 mb-1">Set One-Off Availability</h2>
-                                <p class="text-muted mb-0">Create one-off time slots for customers to book.</p>
+                                <h2 class="h4 mb-1">Create Availability</h2>
+                                <p class="text-muted mb-0">
+                                    Service: <strong><%= stylistServiceName == null ? "Assigned Service" : stylistServiceName %></strong>
+                                    · Slot length: <strong><%= stylistServiceDurationMinutes %> minutes</strong>
+                                </p>
                             </div>
                         </div>
 
-                        <form method="post" action="/stylist/availability" class="row g-3 align-items-end">
-                            <% if (csrfToken != null) { %>
-                                <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
-                            <% } %>
-                            <div class="col-md-4">
-                                <label for="startDateTime" class="form-label">Start</label>
-                                <input id="startDateTime" name="startDateTime" type="datetime-local" class="form-control" required>
+                        <div class="row g-4">
+                            <div class="col-12 col-xl-5">
+                                <div class="border rounded p-3 h-100">
+                                    <h3 class="h6 mb-3">One-Off Slot</h3>
+                                    <form method="post" action="/stylist/availability" class="row g-3 align-items-end">
+                                        <% if (csrfToken != null) { %>
+                                            <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                        <% } %>
+                                        <div class="col-12">
+                                            <label for="startDateTime" class="form-label">Start</label>
+                                            <input id="startDateTime" name="startDateTime" type="datetime-local" class="form-control" required>
+                                        </div>
+                                        <div class="col-12 d-grid">
+                                            <button type="submit" class="btn btn-primary">Add Slot</button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <label for="endDateTime" class="form-label">End</label>
-                                <input id="endDateTime" name="endDateTime" type="datetime-local" class="form-control" required>
+
+                            <div class="col-12 col-xl-7">
+                                <div class="border rounded p-3 h-100">
+                                    <h3 class="h6 mb-3">Bulk Create by Date Range</h3>
+                                    <form method="post" action="/stylist/availability/bulk" class="row g-3">
+                                        <% if (csrfToken != null) { %>
+                                            <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                        <% } %>
+                                        <div class="col-md-6">
+                                            <label for="bulkStartDate" class="form-label">Start Date</label>
+                                            <input id="bulkStartDate" name="startDate" type="date" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="bulkEndDate" class="form-label">End Date</label>
+                                            <input id="bulkEndDate" name="endDate" type="date" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="bulkDayStartTime" class="form-label">Daily Start Time</label>
+                                            <input id="bulkDayStartTime" name="dayStartTime" type="time" class="form-control" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="bulkDayEndTime" class="form-label">Daily End Time</label>
+                                            <input id="bulkDayEndTime" name="dayEndTime" type="time" class="form-control" required>
+                                        </div>
+                                        <div class="col-12">
+                                            <span class="form-label d-block mb-2">Weekdays</span>
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <div class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="wdMon" name="weekdays" value="MONDAY">
+                                                    <label class="form-check-label" for="wdMon">Mon</label>
+                                                </div>
+                                                <div class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="wdTue" name="weekdays" value="TUESDAY">
+                                                    <label class="form-check-label" for="wdTue">Tue</label>
+                                                </div>
+                                                <div class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="wdWed" name="weekdays" value="WEDNESDAY">
+                                                    <label class="form-check-label" for="wdWed">Wed</label>
+                                                </div>
+                                                <div class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="wdThu" name="weekdays" value="THURSDAY">
+                                                    <label class="form-check-label" for="wdThu">Thu</label>
+                                                </div>
+                                                <div class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="wdFri" name="weekdays" value="FRIDAY">
+                                                    <label class="form-check-label" for="wdFri">Fri</label>
+                                                </div>
+                                                <div class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="wdSat" name="weekdays" value="SATURDAY">
+                                                    <label class="form-check-label" for="wdSat">Sat</label>
+                                                </div>
+                                                <div class="form-check form-check-inline mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="wdSun" name="weekdays" value="SUNDAY">
+                                                    <label class="form-check-label" for="wdSun">Sun</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 d-grid d-md-flex justify-content-md-end">
+                                            <button type="submit" class="btn btn-outline-primary">Generate Slots</button>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
-                            <div class="col-md-4 d-grid">
-                                <button type="submit" class="btn btn-primary">Add Slot</button>
-                            </div>
-                        </form>
+                        </div>
 
                         <div class="mt-5">
                             <h3 class="h6 mb-3">Your Availability Slots</h3>
@@ -200,22 +274,47 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const startInput = document.getElementById('startDateTime');
-            const endInput = document.getElementById('endDateTime');
-            if (!startInput || !endInput) {
-                return;
-            }
+            const bulkStartDateInput = document.getElementById('bulkStartDate');
+            const bulkEndDateInput = document.getElementById('bulkEndDate');
+            const weekdayInputs = document.querySelectorAll('input[name="weekdays"]');
 
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            const minValue = now.toISOString().slice(0, 16);
-            startInput.min = minValue;
-            endInput.min = minValue;
+            if (startInput) {
+                const minDateTimeValue = now.toISOString().slice(0, 16);
+                startInput.min = minDateTimeValue;
+            }
 
-            startInput.addEventListener('change', function() {
-                if (startInput.value) {
-                    endInput.min = startInput.value;
-                }
+            if (bulkStartDateInput && bulkEndDateInput) {
+                const minDateValue = now.toISOString().slice(0, 10);
+                bulkStartDateInput.min = minDateValue;
+                bulkEndDateInput.min = minDateValue;
+                bulkStartDateInput.addEventListener('change', function() {
+                    if (bulkStartDateInput.value) {
+                        bulkEndDateInput.min = bulkStartDateInput.value;
+                    }
+                });
+            }
+
+            weekdayInputs.forEach(function(input) {
+                input.addEventListener('change', function() {
+                    updateWeekdayRequirement();
+                });
             });
+
+            function updateWeekdayRequirement() {
+                const selected = Array.from(weekdayInputs).some(function(el) { return el.checked; });
+                weekdayInputs.forEach(function(el) {
+                    el.required = false;
+                    el.setCustomValidity('');
+                });
+                if (!selected && weekdayInputs.length > 0) {
+                    weekdayInputs[0].required = true;
+                    weekdayInputs[0].setCustomValidity('Select at least one weekday.');
+                }
+            }
+
+            updateWeekdayRequirement();
         });
     </script>
 </body>

@@ -70,11 +70,14 @@ public class AppointmentService {
             throw new IllegalArgumentException("Selected user is not a stylist.");
         }
 
-        if (!serviceRepository.existsById(appointment.getServiceId())) {
-            throw new IllegalArgumentException("A valid service selection is required.");
-        }
+        edu.sjsu.cmpe172.salon.model.Service selectedService = serviceRepository.findById(appointment.getServiceId())
+                .orElseThrow(() -> new IllegalArgumentException("A valid service selection is required."));
         if (stylist.getServiceId() != appointment.getServiceId()) {
             throw new IllegalArgumentException("Selected stylist does not provide the chosen service.");
+        }
+        long slotDurationMinutes = java.time.Duration.between(slot.getStartDateTime(), slot.getEndDateTime()).toMinutes();
+        if (slotDurationMinutes != selectedService.getDurationMinutes()) {
+            throw new IllegalArgumentException("Selected slot duration does not match the service duration.");
         }
 
         return repository.createWithSlotReservation(appointment);

@@ -7,6 +7,8 @@ public class Stylist extends User {
 
     private String serviceName;
 
+    private int serviceDurationMinutes;
+
     public Stylist() {
         super();
     }
@@ -30,6 +32,14 @@ public class Stylist extends User {
 
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+
+    public int getServiceDurationMinutes() {
+        return serviceDurationMinutes;
+    }
+
+    public void setServiceDurationMinutes(int serviceDurationMinutes) {
+        this.serviceDurationMinutes = serviceDurationMinutes;
     }
 
     public UserRole getRole() {

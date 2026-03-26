@@ -141,7 +141,7 @@
                                                     if (services != null) {
                                                         for (Service s : services) {
                                                 %>
-                                                    <option value="<%= s.getId() %>"><%= s.getName() %></option>
+                                                    <option value="<%= s.getId() %>" data-duration-minutes="<%= s.getDurationMinutes() %>"><%= s.getName() %> (<%= s.getDurationMinutes() %> min)</option>
                                                 <%
                                                         }
                                                     }
@@ -282,7 +282,8 @@
                 return;
             }
 
-            fetch('/customer/stylists/' + stylistId + '/available-slots')
+            const serviceId = serviceSelect.value;
+            fetch('/customer/stylists/' + stylistId + '/available-slots?serviceId=' + encodeURIComponent(serviceId))
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Failed to load available slots.');

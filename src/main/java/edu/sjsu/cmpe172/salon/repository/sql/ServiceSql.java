@@ -10,18 +10,19 @@ public final class ServiceSql {
                 code VARCHAR(50) NOT NULL UNIQUE,
                 name VARCHAR(120) NOT NULL,
                 description VARCHAR(255) NULL,
-                price DECIMAL(10,2) NOT NULL DEFAULT 0.00
+                price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+                duration_minutes INT NOT NULL
             )
             """;
 
     public static final String FIND_ALL = """
-            SELECT id, code, name, description, price
+            SELECT id, code, name, description, price, duration_minutes
             FROM services
             ORDER BY id
             """;
 
     public static final String FIND_BY_ID = """
-            SELECT id, code, name, description, price
+            SELECT id, code, name, description, price, duration_minutes
             FROM services
             WHERE id = ?
             """;
@@ -33,13 +34,14 @@ public final class ServiceSql {
             """;
 
     public static final String UPSERT_SERVICE = """
-            INSERT INTO services (id, code, name, description, price)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO services (id, code, name, description, price, duration_minutes)
+            VALUES (?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 code = VALUES(code),
                 name = VALUES(name),
                 description = VALUES(description),
-                price = VALUES(price)
+                price = VALUES(price),
+                duration_minutes = VALUES(duration_minutes)
             """;
 
     public static final String COUNT_ALL = """

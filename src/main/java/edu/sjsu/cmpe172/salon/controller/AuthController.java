@@ -1,6 +1,7 @@
 package edu.sjsu.cmpe172.salon.controller;
 
 import edu.sjsu.cmpe172.salon.model.Customer;
+import edu.sjsu.cmpe172.salon.model.Stylist;
 import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
 import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
@@ -87,6 +88,10 @@ public class AuthController {
             case Stylist -> {
                 model.addAttribute("appointments", appointmentService.getAppointmentsForStylist(principal.getUserId()));
                 model.addAttribute("availabilitySlots", availabilitySlotService.getSlotsForStylist(principal.getUserId()));
+                if (principal.getUser() instanceof Stylist stylist) {
+                    model.addAttribute("stylistServiceName", stylist.getServiceName());
+                    model.addAttribute("stylistServiceDurationMinutes", stylist.getServiceDurationMinutes());
+                }
                 yield "dashboard/stylist";
             }
             case Customer -> {
