@@ -113,3 +113,8 @@
   margin-bottom: 1rem;
   color: var(--bs-secondary);
 }
+
+/* Common */
+.hidden {
+  display: none !important;
+}

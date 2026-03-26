@@ -20,7 +20,7 @@
     <div class="page-header">
         <div class="container page-header__container">
             <h1 class="h2 page-header__title">Admin Dashboard</h1>
-            <p class="page-header__subtitle text-muted">Manage platform users and assign stylist roles.</p>
+            <p class="page-header__subtitle text-muted">Manage the business, services, and users.</p>
         </div>
     </div>
 
@@ -56,7 +56,21 @@
             }
         %>
 
-        <div class="card border-0 mb-4">
+        <div>
+            <ul class="nav nav-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" data-tab="provider">Provider</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-tab="services">Services</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" data-tab="users">Users</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card border-0 mb-4" data-tab="provider">
             <div class="card-header bg-white border-bottom py-3">
                 <h2 class="h5 mb-0 fw-bold">Provider Information</h2>
             </div>
@@ -89,7 +103,7 @@
             </div>
         </div>
 
-        <div class="card border-0 mb-4">
+        <div class="card border-0 mb-4" data-tab="provider">
             <div class="card-header bg-white border-bottom py-3">
                 <h2 class="h5 mb-0 fw-bold">Weekly Hours</h2>
             </div>
@@ -153,7 +167,7 @@
             </div>
         </div>
 
-        <div class="card border-0 mb-4">
+        <div class="card border-0 mb-4" data-tab="provider">
             <div class="card-header bg-white border-bottom py-3">
                 <h2 class="h5 mb-0 fw-bold">Date Overrides</h2>
             </div>
@@ -236,12 +250,19 @@
             </div>
         </div>
 
-        <div class="card border-0">
+        <div class="hidden" data-tab="services">
+            <div class="card-header bg-white border-bottom py-3">
+                <h2 class="h5 mb-0 fw-bold">Service Management</h2>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Service management features coming soon...</p>
+            </div>
+        </div>
+
+        <div class="hidden card border-0" data-tab="users">
             <div class="card-header bg-white border-bottom py-3">
                 <div class="row align-items-center g-3">
-                    <div class="col-md-4">
-                        <h2 class="h5 mb-0 fw-bold">User Management</h2>
-                    </div>
+                    <div class="col-md-4"></div>
                     <div class="col-md-8">
                         <div class="d-flex flex-column flex-sm-row gap-2 justify-content-md-end">
                             <div class="input-group input-group-sm" style="max-width: 300px;">
@@ -374,67 +395,104 @@
     </main>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const weekdays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
-        weekdays.forEach(day => {
-            const closedCheckbox = document.getElementById('closed_' + day);
-            const openInput = document.getElementById('openTime_' + day);
-            const closeInput = document.getElementById('closeTime_' + day);
-            if (!closedCheckbox || !openInput || !closeInput) {
-                return;
-            }
-            const syncDisabledState = function() {
-                openInput.disabled = closedCheckbox.checked;
-                closeInput.disabled = closedCheckbox.checked;
-            };
-            syncDisabledState();
-            closedCheckbox.addEventListener('change', syncDisabledState);
-        });
-
-        const overrideMode = document.getElementById('overrideMode');
-        const overrideOpenTime = document.getElementById('overrideOpenTime');
-        const overrideCloseTime = document.getElementById('overrideCloseTime');
-        const syncOverrideMode = function() {
-            if (!overrideMode || !overrideOpenTime || !overrideCloseTime) {
-                return;
-            }
-            const closedAllDay = overrideMode.value === 'CLOSED';
-            overrideOpenTime.disabled = closedAllDay;
-            overrideCloseTime.disabled = closedAllDay;
-            overrideOpenTime.required = !closedAllDay;
-            overrideCloseTime.required = !closedAllDay;
-        };
-        syncOverrideMode();
-        if (overrideMode) {
-            overrideMode.addEventListener('change', syncOverrideMode);
-        }
-
-        const searchInput = document.getElementById('userSearch');
-        const roleFilter = document.getElementById('roleFilter');
-        const rows = document.querySelectorAll('#userTable tbody tr');
-
-        function filterTable() {
-            const searchTerm = searchInput.value.toLowerCase().trim();
-            const selectedRole = roleFilter.value.toUpperCase();
-
-            rows.forEach(row => {
-                const searchData = row.getAttribute('data-search').toLowerCase();
-                const userRole = row.getAttribute('data-role').toUpperCase();
-
-                const matchesSearch = searchData.includes(searchTerm);
-                const matchesRole = selectedRole === 'ALL' || userRole === selectedRole;
-
-                if (matchesSearch && matchesRole) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
+        document.addEventListener('DOMContentLoaded', () => {
+            let activeTab = 'provider';
+            const ul = document.querySelector('ul.nav-tabs');
+            /**
+             * @param {MouseEvent} ev
+             */
+            const handleTabClick = (ev) => {
+                ev.preventDefault();
+                const clickedTab = ev.target.closest('a.nav-link');
+                if (!clickedTab) {
+                    return;
                 }
+                const tabName = clickedTab.getAttribute('data-tab');
+                if (!tabName || tabName === activeTab) {
+                    return;
+                }
+                activeTab = tabName;
+                // Show the tab content
+                const tabContents = document.querySelectorAll('div[data-tab]');
+                for (const el of tabContents) {
+                    // Show the active tab, hide others
+                    if (el.getAttribute('data-tab') === activeTab) {
+                        el.classList.remove('hidden');
+                    } else {
+                        el.classList.add('hidden');
+                    }
+                }
+            }
+            const tabItems = ul.querySelectorAll('a.nav-link');
+            for (const li of tabItems) {
+                const tabTrigger = new bootstrap.Tab(li)
+                li.addEventListener('click', (ev) => {
+                    handleTabClick(ev);
+                    tabTrigger.show();
+                });
+            }
+        });
+        document.addEventListener('DOMContentLoaded', () => {
+            const weekdays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+            weekdays.forEach(day => {
+                const closedCheckbox = document.getElementById('closed_' + day);
+                const openInput = document.getElementById('openTime_' + day);
+                const closeInput = document.getElementById('closeTime_' + day);
+                if (!closedCheckbox || !openInput || !closeInput) {
+                    return;
+                }
+                const syncDisabledState = () => {
+                    openInput.disabled = closedCheckbox.checked;
+                    closeInput.disabled = closedCheckbox.checked;
+                };
+                syncDisabledState();
+                closedCheckbox.addEventListener('change', syncDisabledState);
             });
-        }
 
-        searchInput.addEventListener('input', filterTable);
-        roleFilter.addEventListener('change', filterTable);
-    });
+            const overrideMode = document.getElementById('overrideMode');
+            const overrideOpenTime = document.getElementById('overrideOpenTime');
+            const overrideCloseTime = document.getElementById('overrideCloseTime');
+            const syncOverrideMode = () => {
+                if (!overrideMode || !overrideOpenTime || !overrideCloseTime) {
+                    return;
+                }
+                const closedAllDay = overrideMode.value === 'CLOSED';
+                overrideOpenTime.disabled = closedAllDay;
+                overrideCloseTime.disabled = closedAllDay;
+                overrideOpenTime.required = !closedAllDay;
+                overrideCloseTime.required = !closedAllDay;
+            };
+            syncOverrideMode();
+            if (overrideMode) {
+                overrideMode.addEventListener('change', syncOverrideMode);
+            }
+
+            const searchInput = document.getElementById('userSearch');
+            const roleFilter = document.getElementById('roleFilter');
+            const rows = document.querySelectorAll('#userTable tbody tr');
+
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                const selectedRole = roleFilter.value.toUpperCase();
+
+                rows.forEach(row => {
+                    const searchData = row.getAttribute('data-search').toLowerCase();
+                    const userRole = row.getAttribute('data-role').toUpperCase();
+
+                    const matchesSearch = searchData.includes(searchTerm);
+                    const matchesRole = selectedRole === 'ALL' || userRole === selectedRole;
+
+                    if (matchesSearch && matchesRole) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            searchInput.addEventListener('input', filterTable);
+            roleFilter.addEventListener('change', filterTable);
+        });
     </script>
 </body>
 </html>
