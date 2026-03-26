@@ -16,8 +16,6 @@ public class ProviderDataMapper {
         provider.setAddress(resultSet.getString("address"));
         provider.setPhoneNumber(resultSet.getString("phone_number"));
         provider.setEmailAddress(resultSet.getString("email_address"));
-        provider.setOpenTime(resultSet.getTimestamp("open_time"));
-        provider.setCloseTime(resultSet.getTimestamp("close_time"));
         return provider;
     }
 
@@ -27,7 +25,5 @@ public class ProviderDataMapper {
         statement.setString(3, provider.getAddress());
         statement.setString(4, provider.getPhoneNumber());
         statement.setString(5, provider.getEmailAddress());
-        statement.setTimestamp(6, provider.getOpenTime());
-        statement.setTimestamp(7, provider.getCloseTime());
     }
 }

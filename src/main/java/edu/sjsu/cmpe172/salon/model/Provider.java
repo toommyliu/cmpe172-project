@@ -1,8 +1,6 @@
 package edu.sjsu.cmpe172.salon.model;
 
-import java.sql.Timestamp;
-
-// Provider(id, name, address, phone_number, email_address, open_time, close_time)
+// Provider(id, name, address, phone_number, email_address)
 
 public class Provider {
     private int id;
@@ -14,9 +12,6 @@ public class Provider {
     private String phoneNumber;
 
     private String emailAddress;
-
-    private Timestamp openTime;
-    private Timestamp closeTime;
 
     public int getId() {
         return id;
@@ -56,21 +51,5 @@ public class Provider {
 
     public void setEmailAddress(String emailAddress) {
         this.emailAddress = emailAddress;
-    }
-
-    public Timestamp getOpenTime() {
-        return openTime;
-    }
-
-    public void setOpenTime(Timestamp openTime) {
-        this.openTime = openTime;
-    }
-
-    public Timestamp getCloseTime() {
-        return closeTime;
-    }
-
-    public void setCloseTime(Timestamp closeTime) {
-        this.closeTime = closeTime;
     }
 }

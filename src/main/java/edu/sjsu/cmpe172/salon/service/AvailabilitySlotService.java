@@ -14,10 +14,15 @@ import java.util.Set;
 
 @Service
 public class AvailabilitySlotService {
-    private final AvailabilitySlotRepository repository;
+    private static final int DEFAULT_PROVIDER_ID = 1;
 
-    public AvailabilitySlotService(AvailabilitySlotRepository repository) {
+    private final AvailabilitySlotRepository repository;
+    private final ProviderScheduleService providerScheduleService;
+
+    public AvailabilitySlotService(AvailabilitySlotRepository repository,
+                                   ProviderScheduleService providerScheduleService) {
         this.repository = repository;
+        this.providerScheduleService = providerScheduleService;
     }
 
     public List<AvailabilitySlot> getSlotsForStylist(int stylistUserId) {
@@ -25,7 +30,8 @@ public class AvailabilitySlotService {
     }
 
     public List<AvailabilitySlot> getAvailableSlotsForStylist(int stylistUserId) {
-        return repository.findAvailableByStylistUserId(stylistUserId);
+        List<AvailabilitySlot> slots = repository.findAvailableByStylistUserId(stylistUserId);
+        return providerScheduleService.filterSlotsWithinProviderHours(DEFAULT_PROVIDER_ID, slots);
     }
 
     public AvailabilitySlot createSlot(int stylistUserId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
@@ -37,6 +43,9 @@ public class AvailabilitySlotService {
         }
         if (!startDateTime.isAfter(LocalDateTime.now())) {
             throw new IllegalArgumentException("Start time must be in the future.");
+        }
+        if (!providerScheduleService.isSlotWithinProviderHours(DEFAULT_PROVIDER_ID, startDateTime, endDateTime)) {
+            throw new IllegalArgumentException("Slot must be within provider operating hours.");
         }
         if (repository.hasOverlappingSlot(stylistUserId, startDateTime, endDateTime)) {
             throw new IllegalArgumentException("This slot overlaps with an existing slot.");
@@ -87,6 +96,7 @@ public class AvailabilitySlotService {
             while (!slotStart.plusMinutes(slotDurationMinutes).isAfter(dayEndDateTime)) {
                 LocalDateTime slotEnd = slotStart.plusMinutes(slotDurationMinutes);
                 if (!slotStart.isAfter(now)
+                        || !providerScheduleService.isSlotWithinProviderHours(DEFAULT_PROVIDER_ID, slotStart, slotEnd)
                         || repository.hasOverlappingSlot(stylistUserId, slotStart, slotEnd)) {
                     skippedCount++;
                     slotStart = slotEnd;

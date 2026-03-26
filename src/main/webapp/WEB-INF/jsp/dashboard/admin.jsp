@@ -1,11 +1,15 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.time.DayOfWeek" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Service" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Provider" %>
+<%@ page import="edu.sjsu.cmpe172.salon.model.ProviderWeeklyHours" %>
+<%@ page import="edu.sjsu.cmpe172.salon.model.ProviderDateOverride" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.User" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Stylist" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
-<%@ page import="java.text.SimpleDateFormat" %>
 <!DOCTYPE html>
 <html lang="en">
 <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
@@ -30,9 +34,10 @@
                 provider = new Provider();
                 provider.setId(1);
             }
-            SimpleDateFormat providerDateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
-            String providerOpenTime = provider.getOpenTime() == null ? "" : providerDateTimeFormat.format(provider.getOpenTime());
-            String providerCloseTime = provider.getCloseTime() == null ? "" : providerDateTimeFormat.format(provider.getCloseTime());
+            Map<DayOfWeek, ProviderWeeklyHours> weeklyHoursByDay = (Map<DayOfWeek, ProviderWeeklyHours>) request.getAttribute("weeklyHoursByDay");
+            List<ProviderDateOverride> dateOverrides = (List<ProviderDateOverride>) request.getAttribute("dateOverrides");
+            DateTimeFormatter inputTimeFormatter = DateTimeFormatter.ofPattern("HH:mm");
+            DateTimeFormatter displayTimeFormatter = DateTimeFormatter.ofPattern("h:mm a");
             if (successMessage != null) {
         %>
             <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
@@ -77,18 +82,157 @@
                         <label for="providerEmail" class="form-label">Email Address</label>
                         <input id="providerEmail" type="email" name="emailAddress" class="form-control" value="<%= provider.getEmailAddress() == null ? "" : provider.getEmailAddress() %>">
                     </div>
-                    <div class="col-md-6">
-                        <label for="providerOpenTime" class="form-label">Open Time</label>
-                        <input id="providerOpenTime" type="datetime-local" name="openTime" class="form-control" value="<%= providerOpenTime %>">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="providerCloseTime" class="form-label">Close Time</label>
-                        <input id="providerCloseTime" type="datetime-local" name="closeTime" class="form-control" value="<%= providerCloseTime %>">
-                    </div>
                     <div class="col-12 text-end">
-                        <button class="btn btn-primary" type="submit">Save Provider</button>
+                        <button class="btn btn-primary" type="submit">Save Provider Profile</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <div class="card border-0 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h2 class="h5 mb-0 fw-bold">Weekly Hours</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/admin/provider/weekly-hours">
+                    <input type="hidden" name="id" value="<%= provider.getId() > 0 ? provider.getId() : 1 %>">
+                    <% if (csrfToken != null) { %>
+                        <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                    <% } %>
+
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Closed</th>
+                                    <th>Open</th>
+                                    <th>Close</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <%
+                                for (DayOfWeek dayOfWeek : DayOfWeek.values()) {
+                                    ProviderWeeklyHours hours = weeklyHoursByDay == null ? null : weeklyHoursByDay.get(dayOfWeek);
+                                    boolean closed = hours == null || hours.isClosed();
+                                    String openValue = (hours == null || hours.getOpenTime() == null) ? "" : hours.getOpenTime().format(inputTimeFormatter);
+                                    String closeValue = (hours == null || hours.getCloseTime() == null) ? "" : hours.getCloseTime().format(inputTimeFormatter);
+                                    String dayLabel = switch (dayOfWeek) {
+                                        case MONDAY -> "Monday";
+                                        case TUESDAY -> "Tuesday";
+                                        case WEDNESDAY -> "Wednesday";
+                                        case THURSDAY -> "Thursday";
+                                        case FRIDAY -> "Friday";
+                                        case SATURDAY -> "Saturday";
+                                        case SUNDAY -> "Sunday";
+                                    };
+                            %>
+                                <tr>
+                                    <td class="fw-semibold"><%= dayLabel %></td>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input js-day-closed" type="checkbox" id="closed_<%= dayOfWeek.name() %>" name="closedDays" value="<%= dayOfWeek.name() %>" <%= closed ? "checked" : "" %>>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input id="openTime_<%= dayOfWeek.name() %>" type="time" name="openTime_<%= dayOfWeek.name() %>" class="form-control" value="<%= openValue %>" <%= closed ? "disabled" : "" %>>
+                                    </td>
+                                    <td>
+                                        <input id="closeTime_<%= dayOfWeek.name() %>" type="time" name="closeTime_<%= dayOfWeek.name() %>" class="form-control" value="<%= closeValue %>" <%= closed ? "disabled" : "" %>>
+                                    </td>
+                                </tr>
+                            <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="text-end mt-3">
+                        <button class="btn btn-primary" type="submit">Save Weekly Hours</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 mb-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <h2 class="h5 mb-0 fw-bold">Date Overrides</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" action="/admin/provider/date-overrides" class="row g-3 mb-4">
+                    <input type="hidden" name="id" value="<%= provider.getId() > 0 ? provider.getId() : 1 %>">
+                    <% if (csrfToken != null) { %>
+                        <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                    <% } %>
+                    <div class="col-md-3">
+                        <label for="overrideDate" class="form-label">Date</label>
+                        <input id="overrideDate" type="date" name="overrideDate" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="overrideMode" class="form-label">Mode</label>
+                        <select id="overrideMode" name="overrideMode" class="form-select" required>
+                            <option value="CUSTOM" selected>Custom Hours</option>
+                            <option value="CLOSED">Closed All Day</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="overrideOpenTime" class="form-label">Open Time</label>
+                        <input id="overrideOpenTime" type="time" name="openTime" class="form-control" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="overrideCloseTime" class="form-label">Close Time</label>
+                        <input id="overrideCloseTime" type="time" name="closeTime" class="form-control" required>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button class="btn btn-primary" type="submit">Add Override</button>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Rule</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        <%
+                            if (dateOverrides != null && !dateOverrides.isEmpty()) {
+                                for (ProviderDateOverride override : dateOverrides) {
+                                    String ruleLabel;
+                                    if (override.isClosed()) {
+                                        ruleLabel = "Closed all day";
+                                    } else if (override.getOpenTime() != null && override.getCloseTime() != null) {
+                                        ruleLabel = override.getOpenTime().format(displayTimeFormatter) + " - " + override.getCloseTime().format(displayTimeFormatter);
+                                    } else {
+                                        ruleLabel = "Invalid override";
+                                    }
+                        %>
+                            <tr>
+                                <td><%= override.getOverrideDate() %></td>
+                                <td><%= ruleLabel %></td>
+                                <td class="text-end">
+                                    <form method="post" action="/admin/provider/date-overrides/<%= override.getId() %>/delete" class="d-inline">
+                                        <input type="hidden" name="id" value="<%= provider.getId() > 0 ? provider.getId() : 1 %>">
+                                        <% if (csrfToken != null) { %>
+                                            <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                        <% } %>
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        <%
+                                }
+                            } else {
+                        %>
+                            <tr>
+                                <td colspan="3" class="text-muted text-center py-4">No date overrides yet.</td>
+                            </tr>
+                        <% } %>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -231,6 +375,40 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const weekdays = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+        weekdays.forEach(day => {
+            const closedCheckbox = document.getElementById('closed_' + day);
+            const openInput = document.getElementById('openTime_' + day);
+            const closeInput = document.getElementById('closeTime_' + day);
+            if (!closedCheckbox || !openInput || !closeInput) {
+                return;
+            }
+            const syncDisabledState = function() {
+                openInput.disabled = closedCheckbox.checked;
+                closeInput.disabled = closedCheckbox.checked;
+            };
+            syncDisabledState();
+            closedCheckbox.addEventListener('change', syncDisabledState);
+        });
+
+        const overrideMode = document.getElementById('overrideMode');
+        const overrideOpenTime = document.getElementById('overrideOpenTime');
+        const overrideCloseTime = document.getElementById('overrideCloseTime');
+        const syncOverrideMode = function() {
+            if (!overrideMode || !overrideOpenTime || !overrideCloseTime) {
+                return;
+            }
+            const closedAllDay = overrideMode.value === 'CLOSED';
+            overrideOpenTime.disabled = closedAllDay;
+            overrideCloseTime.disabled = closedAllDay;
+            overrideOpenTime.required = !closedAllDay;
+            overrideCloseTime.required = !closedAllDay;
+        };
+        syncOverrideMode();
+        if (overrideMode) {
+            overrideMode.addEventListener('change', syncOverrideMode);
+        }
+
         const searchInput = document.getElementById('userSearch');
         const roleFilter = document.getElementById('roleFilter');
         const rows = document.querySelectorAll('#userTable tbody tr');

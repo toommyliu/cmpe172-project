@@ -8,6 +8,7 @@ import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
 import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
 import edu.sjsu.cmpe172.salon.service.AvailabilitySlotService;
+import edu.sjsu.cmpe172.salon.service.ProviderScheduleService;
 import edu.sjsu.cmpe172.salon.service.UserService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -24,17 +25,20 @@ public class AuthController {
     private final AvailabilitySlotService availabilitySlotService;
     private final ServiceRepository serviceRepository;
     private final ProviderRepository providerRepository;
+    private final ProviderScheduleService providerScheduleService;
 
     public AuthController(UserService userService,
                           AppointmentService appointmentService,
                           AvailabilitySlotService availabilitySlotService,
                           ServiceRepository serviceRepository,
-                          ProviderRepository providerRepository) {
+                          ProviderRepository providerRepository,
+                          ProviderScheduleService providerScheduleService) {
         this.userService = userService;
         this.appointmentService = appointmentService;
         this.availabilitySlotService = availabilitySlotService;
         this.serviceRepository = serviceRepository;
         this.providerRepository = providerRepository;
+        this.providerScheduleService = providerScheduleService;
     }
 
     @GetMapping("/login")
@@ -88,13 +92,16 @@ public class AuthController {
             case Admin -> {
                 model.addAttribute("users", userService.getAllUsers());
                 model.addAttribute("services", serviceRepository.findAll());
-                model.addAttribute("provider", providerRepository.findById(1).orElseGet(() -> {
+                int providerId = 1;
+                model.addAttribute("provider", providerRepository.findById(providerId).orElseGet(() -> {
                     Provider provider = new Provider();
                     // since we only support one provider
                     // we can just hardcode the ID here
-                    provider.setId(1);
+                    provider.setId(providerId);
                     return provider;
                 }));
+                model.addAttribute("weeklyHoursByDay", providerScheduleService.getWeeklyHoursByDay(providerId));
+                model.addAttribute("dateOverrides", providerScheduleService.getDateOverrides(providerId));
                 yield "dashboard/admin";
             }
             case Stylist -> {

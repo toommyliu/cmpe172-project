@@ -18,19 +18,24 @@ import java.util.Optional;
 
 @Service
 public class AppointmentService {
+    private static final int DEFAULT_PROVIDER_ID = 1;
+
     private final AppointmentRepository repository;
     private final AvailabilitySlotRepository availabilitySlotRepository;
     private final ServiceRepository serviceRepository;
     private final UserRepository userRepository;
+    private final ProviderScheduleService providerScheduleService;
 
     public AppointmentService(AppointmentRepository repository,
                               AvailabilitySlotRepository availabilitySlotRepository,
                               ServiceRepository serviceRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              ProviderScheduleService providerScheduleService) {
         this.repository = repository;
         this.availabilitySlotRepository = availabilitySlotRepository;
         this.serviceRepository = serviceRepository;
         this.userRepository = userRepository;
+        this.providerScheduleService = providerScheduleService;
     }
 
     public List<AppointmentDto> getAllAppointmentViews() {
@@ -63,6 +68,12 @@ public class AppointmentService {
         }
         if (!slot.getStartDateTime().isAfter(LocalDateTime.now())) {
             throw new IllegalArgumentException("Selected time slot must be in the future.");
+        }
+        if (!providerScheduleService.isSlotWithinProviderHours(
+                DEFAULT_PROVIDER_ID,
+                slot.getStartDateTime(),
+                slot.getEndDateTime())) {
+            throw new IllegalArgumentException("Selected time slot is outside provider operating hours.");
         }
 
         User stylistUser = userRepository.findById(appointment.getStylistUserId())
