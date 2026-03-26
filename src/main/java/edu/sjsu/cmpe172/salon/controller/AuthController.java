@@ -86,7 +86,7 @@ public class AuthController {
                 yield "dashboard/admin";
             }
             case Stylist -> {
-                model.addAttribute("appointments", appointmentService.getAppointmentsForStylist(principal.getUserId()));
+                model.addAttribute("appointments", appointmentService.getAppointmentViewsForStylist(principal.getUserId()));
                 model.addAttribute("availabilitySlots", availabilitySlotService.getSlotsForStylist(principal.getUserId()));
                 if (principal.getUser() instanceof Stylist stylist) {
                     model.addAttribute("stylistServiceName", stylist.getServiceName());
@@ -95,7 +95,7 @@ public class AuthController {
                 yield "dashboard/stylist";
             }
             case Customer -> {
-                model.addAttribute("appointments", appointmentService.getAppointmentsForCustomer(principal.getUserId()));
+                model.addAttribute("appointments", appointmentService.getAppointmentViewsForCustomer(principal.getUserId()));
                 model.addAttribute("services", serviceRepository.findAll());
                 model.addAttribute("stylists", userService.getAllStylists());
                 yield "dashboard/customer";

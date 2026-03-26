@@ -49,7 +49,7 @@ public class AppointmentController {
     @GetMapping("/appointments")
     public String appointments(@AuthenticationPrincipal SalonUserPrincipal principal, Model model) {
         if (principal.getUserRole() == UserRole.Admin) {
-            model.addAttribute("appointments", service.getAllAppointments());
+            model.addAttribute("appointments", service.getAllAppointmentViews());
             model.addAttribute("pageTitle", "All Appointments");
             model.addAttribute("showManagementActions", true);
             return "appointments/index";

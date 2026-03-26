@@ -1,9 +1,11 @@
 package edu.sjsu.cmpe172.salon.repository.mysql;
 
 import edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus;
+import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import edu.sjsu.cmpe172.salon.repository.AppointmentRepository;
 import edu.sjsu.cmpe172.salon.repository.mapper.AppointmentDataMapper;
+import edu.sjsu.cmpe172.salon.repository.mapper.AppointmentDtoDataMapper;
 import edu.sjsu.cmpe172.salon.repository.sql.AppointmentSql;
 import edu.sjsu.cmpe172.salon.repository.sql.AvailabilitySlotSql;
 import edu.sjsu.cmpe172.salon.repository.sql.ServiceSql;
@@ -26,26 +28,29 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
     private final String dbUsername;
     private final String dbPassword;
     private final AppointmentDataMapper dataMapper;
+    private final AppointmentDtoDataMapper dtoDataMapper;
 
     public MySqlAppointmentRepository(@Value("${salon.db.url}") String dbUrl,
                                       @Value("${salon.db.username}") String dbUsername,
                                       @Value("${salon.db.password}") String dbPassword,
-                                      AppointmentDataMapper dataMapper) {
+                                      AppointmentDataMapper dataMapper,
+                                      AppointmentDtoDataMapper dtoDataMapper) {
         this.dbUrl = dbUrl;
         this.dbUsername = dbUsername;
         this.dbPassword = dbPassword;
         this.dataMapper = dataMapper;
+        this.dtoDataMapper = dtoDataMapper;
         ensureSchema();
     }
 
     @Override
-    public List<Appointment> findAll() {
-        List<Appointment> appointments = new ArrayList<>();
+    public List<AppointmentDto> findAllViews() {
+        List<AppointmentDto> appointments = new ArrayList<>();
         try (Connection connection = openConnection();
-             PreparedStatement statement = connection.prepareStatement(AppointmentSql.FIND_ALL);
+            PreparedStatement statement = connection.prepareStatement(AppointmentSql.FIND_ALL);
              ResultSet resultSet = statement.executeQuery()) {
             while (resultSet.next()) {
-                appointments.add(dataMapper.toDomain(resultSet));
+                appointments.add(dtoDataMapper.toDomain(resultSet));
             }
             return appointments;
         } catch (SQLException ex) {
@@ -70,13 +75,13 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
     }
 
     @Override
-    public List<Appointment> findByCustomerUserId(int customerUserId) {
-        return findByUserId(AppointmentSql.FIND_BY_CUSTOMER_USER_ID, customerUserId);
+    public List<AppointmentDto> findViewsByCustomerUserId(int customerUserId) {
+        return findViewsByUserId(AppointmentSql.FIND_BY_CUSTOMER_USER_ID, customerUserId);
     }
 
     @Override
-    public List<Appointment> findByStylistUserId(int stylistUserId) {
-        return findByUserId(AppointmentSql.FIND_BY_STYLIST_USER_ID, stylistUserId);
+    public List<AppointmentDto> findViewsByStylistUserId(int stylistUserId) {
+        return findViewsByUserId(AppointmentSql.FIND_BY_STYLIST_USER_ID, stylistUserId);
     }
 
     @Override
@@ -202,14 +207,14 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
         return DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
     }
 
-    private List<Appointment> findByUserId(String sql, int userId) {
-        List<Appointment> appointments = new ArrayList<>();
+    private List<AppointmentDto> findViewsByUserId(String sql, int userId) {
+        List<AppointmentDto> appointments = new ArrayList<>();
         try (Connection connection = openConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setInt(1, userId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
-                    appointments.add(dataMapper.toDomain(resultSet));
+                    appointments.add(dtoDataMapper.toDomain(resultSet));
                 }
                 return appointments;
             }

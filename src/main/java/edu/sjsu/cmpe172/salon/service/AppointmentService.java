@@ -1,6 +1,7 @@
 package edu.sjsu.cmpe172.salon.service;
 
 import edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus;
+import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import edu.sjsu.cmpe172.salon.model.AvailabilitySlot;
 import edu.sjsu.cmpe172.salon.model.Stylist;
@@ -32,20 +33,20 @@ public class AppointmentService {
         this.userRepository = userRepository;
     }
 
-    public List<Appointment> getAllAppointments() {
-        return repository.findAll();
+    public List<AppointmentDto> getAllAppointmentViews() {
+        return repository.findAllViews();
     }
 
     public Optional<Appointment> getAppointmentById(int id) {
         return repository.findById(id);
     }
 
-    public List<Appointment> getAppointmentsForCustomer(int customerUserId) {
-        return repository.findByCustomerUserId(customerUserId);
+    public List<AppointmentDto> getAppointmentViewsForCustomer(int customerUserId) {
+        return repository.findViewsByCustomerUserId(customerUserId);
     }
 
-    public List<Appointment> getAppointmentsForStylist(int stylistUserId) {
-        return repository.findByStylistUserId(stylistUserId);
+    public List<AppointmentDto> getAppointmentViewsForStylist(int stylistUserId) {
+        return repository.findViewsByStylistUserId(stylistUserId);
     }
 
     public Appointment createAppointment(Appointment appointment) {

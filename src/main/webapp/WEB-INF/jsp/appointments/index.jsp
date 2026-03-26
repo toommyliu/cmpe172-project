@@ -1,4 +1,4 @@
-<%@ page import="edu.sjsu.cmpe172.salon.model.Appointment" %>
+<%@ page import="edu.sjsu.cmpe172.salon.dto.AppointmentDto" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
@@ -76,9 +76,9 @@
                 </thead>
                 <tbody>
                     <%
-                        List<Appointment> appointments = (List<Appointment>) request.getAttribute("appointments");
+                        List<AppointmentDto> appointments = (List<AppointmentDto>) request.getAttribute("appointments");
                         if (appointments != null && !appointments.isEmpty()) {
-                            for (Appointment apt : appointments) {
+                            for (AppointmentDto apt : appointments) {
                                 String serviceName = apt.getServiceName();
                                 if (serviceName == null || serviceName.isBlank()) {
                                     serviceName = "Service #" + apt.getServiceId();

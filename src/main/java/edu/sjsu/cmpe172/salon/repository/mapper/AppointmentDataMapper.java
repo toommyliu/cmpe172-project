@@ -6,32 +6,10 @@ import org.springframework.stereotype.Component;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 
 @Component
 public class AppointmentDataMapper {
     public Appointment toDomain(ResultSet resultSet) throws SQLException {
-        Appointment appointment = new Appointment();
-        appointment.setId(resultSet.getInt("id"));
-        appointment.setCustomerUserId(resultSet.getInt("customer_user_id"));
-        appointment.setStylistUserId(resultSet.getInt("stylist_user_id"));
-        appointment.setServiceId(resultSet.getInt("service_id"));
-        appointment.setServiceName(resultSet.getString("service_name"));
-        appointment.setAvailabilitySlotId(resultSet.getInt("availability_slot_id"));
-        appointment.setCustomerName(resultSet.getString("customer_name"));
-        appointment.setStylistName(resultSet.getString("stylist_name"));
-        Timestamp slotStart = resultSet.getTimestamp("slot_start_datetime");
-        Timestamp slotEnd = resultSet.getTimestamp("slot_end_datetime");
-        if (slotStart != null) {
-            appointment.setSlotStartDateTime(slotStart.toLocalDateTime());
-        }
-        if (slotEnd != null) {
-            appointment.setSlotEndDateTime(slotEnd.toLocalDateTime());
-        }
-        return appointment;
-    }
-
-    public Appointment toDomainWithoutSlotColumns(ResultSet resultSet) throws SQLException {
         Appointment appointment = new Appointment();
         appointment.setId(resultSet.getInt("id"));
         appointment.setCustomerUserId(resultSet.getInt("customer_user_id"));

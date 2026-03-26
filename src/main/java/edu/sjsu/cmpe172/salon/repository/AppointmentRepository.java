@@ -1,18 +1,19 @@
 package edu.sjsu.cmpe172.salon.repository;
 
 import edu.sjsu.cmpe172.salon.model.Appointment;
+import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface AppointmentRepository {
-    List<Appointment> findAll();
+    List<AppointmentDto> findAllViews();
 
     Optional<Appointment> findById(int id);
 
-    List<Appointment> findByCustomerUserId(int customerUserId);
+    List<AppointmentDto> findViewsByCustomerUserId(int customerUserId);
 
-    List<Appointment> findByStylistUserId(int stylistUserId);
+    List<AppointmentDto> findViewsByStylistUserId(int stylistUserId);
 
     Appointment create(Appointment appointment);
 
