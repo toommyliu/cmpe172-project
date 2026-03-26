@@ -1,8 +1,12 @@
 package edu.sjsu.cmpe172.salon.controller;
 
+import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.model.Customer;
 import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
+import edu.sjsu.cmpe172.salon.service.AppointmentService;
 import edu.sjsu.cmpe172.salon.service.UserService;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,9 +18,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 public class AuthController {
     private final UserService userService;
+    private final AppointmentService appointmentService;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, AppointmentService appointmentService) {
         this.userService = userService;
+        this.appointmentService = appointmentService;
     }
 
     @GetMapping("/login")
@@ -71,8 +77,18 @@ public class AuthController {
                 model.addAttribute("users", userService.getAllUsers());
                 yield "dashboard/admin";
             }
-            case Stylist -> "dashboard/stylist";
-            case Customer -> "dashboard/customer";
+            case Stylist -> {
+                model.addAttribute("appointments", appointmentService.getAppointmentsForStylist(principal.getUserId()));
+                yield "dashboard/stylist";
+            }
+            case Customer -> {
+                model.addAttribute("appointments", appointmentService.getAppointmentsForCustomer(principal.getUserId()));
+                model.addAttribute("specialities", Arrays.stream(Speciality.values())
+                        .filter(s -> s != Speciality.None)
+                        .collect(Collectors.toList()));
+                model.addAttribute("stylists", userService.getAllStylists());
+                yield "dashboard/customer";
+            }
         };
     }
 }

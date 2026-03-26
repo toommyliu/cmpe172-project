@@ -28,14 +28,8 @@
                     <a class="nav-link <%= "/dashboard".equals(path) ? "active" : "" %>" href="<%= contextPath %>/dashboard">Dashboard</a>
                     <a class="nav-link <%= path.startsWith("/appointments") ? "active" : "" %>" href="<%= contextPath %>/appointments">Appointments</a>
                 <% } %>
-                <% if (isStylist) { %>
+                <% if (isStylist || isCustomer) { %>
                     <a class="nav-link <%= "/dashboard".equals(path) ? "active" : "" %>" href="<%= contextPath %>/dashboard">Dashboard</a>
-                    <a class="nav-link <%= path.startsWith("/stylist/appointments") ? "active" : "" %>" href="<%= contextPath %>/stylist/appointments">My Schedule</a>
-                <% } %>
-                <% if (isCustomer) { %>
-                    <a class="nav-link <%= "/dashboard".equals(path) ? "active" : "" %>" href="<%= contextPath %>/dashboard">Dashboard</a>
-                    <a class="nav-link <%= path.startsWith("/customer/appointments") ? "active" : "" %>" href="<%= contextPath %>/customer/appointments">My Appointments</a>
-                    <a class="nav-link <%= path.startsWith("/book-appointment") ? "active" : "" %>" href="<%= contextPath %>/book-appointment">Book</a>
                 <% } %>
             </div>
             <div class="navbar-nav ms-auto align-items-lg-center gap-lg-2">

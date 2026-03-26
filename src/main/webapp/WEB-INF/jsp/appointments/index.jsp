@@ -20,6 +20,9 @@
                 if (pageTitle == null) {
                     pageTitle = "Appointments";
                 }
+                boolean isCustomer = request.isUserInRole("CUSTOMER");
+                boolean isStylist = request.isUserInRole("STYLIST");
+                boolean isAdmin = request.isUserInRole("ADMIN");
             %>
             <h1 class="h2 page-header__title"><%= pageTitle %></h1>
             <p class="text-muted page-header__subtitle">Manage and track your appointments with us.</p>
@@ -49,6 +52,10 @@
             <div class="d-flex justify-content-end mb-3">
                 <a class="btn btn-primary" href="/appointments/new">New Appointment</a>
             </div>
+        <% } else if (isCustomer) { %>
+            <div class="d-flex justify-content-end mb-3">
+                <a class="btn btn-primary" href="/available-slots">Book Now</a>
+            </div>
         <% } %>
 
         <div class="table-responsive bg-white p-4 rounded">
@@ -56,8 +63,8 @@
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
-                        <th>Customer ID</th>
-                        <th>Stylist ID</th>
+                        <% if (!isCustomer) { %><th>Customer ID</th><% } %>
+                        <% if (!isStylist) { %><th>Stylist ID</th><% } %>
                         <th>Service</th>
                         <th>Slot ID</th>
                         <% if (canManage) { %>
@@ -74,8 +81,8 @@
                     %>
                         <tr>
                             <td><strong>#<%= apt.getId() %></strong></td>
-                            <td><%= apt.getCustomerUserId() %></td>
-                            <td><%= apt.getStylistUserId() %></td>
+                            <% if (!isCustomer) { %><td><%= apt.getCustomerUserId() %></td><% } %>
+                            <% if (!isStylist) { %><td><%= apt.getStylistUserId() %></td><% } %>
                             <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
                             <td><%= apt.getAvailabilitySlotId() %></td>
                             <% if (canManage) { %>
@@ -95,7 +102,10 @@
                         } else {
                     %>
                         <tr>
-                            <td colspan="<%= canManage ? 6 : 5 %>" class="text-center py-4">No appointments found.</td>
+                            <%
+                                int colCount = 3 + (isCustomer ? 0 : 1) + (isStylist ? 0 : 1) + (canManage ? 1 : 0);
+                            %>
+                            <td colspan="<%= colCount %>" class="text-center py-4">No appointments found.</td>
                         </tr>
                     <%
                         }

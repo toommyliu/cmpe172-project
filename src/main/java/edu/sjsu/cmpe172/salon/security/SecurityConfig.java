@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.ERROR).permitAll()
                         .requestMatchers("/css/**", "/js/**", "/", "/login", "/register").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/appointments").authenticated()
                         .requestMatchers("/appointments/**").hasRole("ADMIN")
                         .requestMatchers("/stylist/**").hasAnyRole("STYLIST", "ADMIN")
                         .requestMatchers("/customer/**", "/available-slots", "/book-appointment", "/booking-confirmation")

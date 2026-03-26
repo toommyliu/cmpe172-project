@@ -25,6 +25,13 @@
 }
 
 /* Booking */
+.booking-step {
+  display: none;
+}
+
+.booking-step.active {
+  display: block;
+}
 
 .booking__card {
   border-radius: 1rem;
@@ -73,28 +80,25 @@
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: center;
-  border: 1px solid var(--bs-border-color);
-  background: white;
+  background: var(--bs-light);
   padding: 1rem;
   border-radius: 0.5rem;
   user-select: none;
+  border: none;
 }
 
-.booking__slot:hover {
-  border-color: var(--bs-primary);
-  color: var(--bs-primary);
+.booking__slot:hover:not(.booking__slot--disabled) {
   background-color: var(--bs-primary-bg-subtle);
+  color: var(--bs-primary-text-emphasis);
 }
 
 .booking__slot--selected {
   background-color: var(--bs-primary) !important;
   color: white !important;
-  border-color: var(--bs-primary) !important;
 }
 
 .booking__slot--disabled {
   cursor: not-allowed;
-  pointer-events: auto;
   opacity: 0.5;
   background-color: var(--bs-tertiary-bg);
   color: var(--bs-secondary-color);
