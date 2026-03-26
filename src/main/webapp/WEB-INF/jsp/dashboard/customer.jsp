@@ -3,6 +3,7 @@
 <%@ page import="edu.sjsu.cmpe172.salon.model.Stylist" %>
 <%@ page import="edu.sjsu.cmpe172.salon.enums.Speciality" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <!DOCTYPE html>
 <html lang="en">
 <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
@@ -15,6 +16,17 @@
     <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
     <main class="container py-5">
+        <%
+            String successMessage = (String) request.getAttribute("successMessage");
+            String errorMessage = (String) request.getAttribute("errorMessage");
+            DateTimeFormatter slotFormatter = DateTimeFormatter.ofPattern("EEE, MMM d h:mm a");
+        %>
+        <% if (successMessage != null) { %>
+            <div class="alert alert-success" role="alert"><%= successMessage %></div>
+        <% } %>
+        <% if (errorMessage != null) { %>
+            <div class="alert alert-danger" role="alert"><%= errorMessage %></div>
+        <% } %>
         <div id="dashboardView">
             <div class="row g-4">
                 <div class="col-12">
@@ -36,6 +48,7 @@
                                             <tr>
                                                 <th>ID</th>
                                                 <th>Service</th>
+                                                <th>Stylist</th>
                                                 <th>Slot</th>
                                                 <th class="text-end">Actions</th>
                                             </tr>
@@ -50,9 +63,22 @@
                                                 <tr>
                                                     <td><strong>#<%= apt.getId() %></strong></td>
                                                     <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
-                                                    <td>Slot <%= apt.getAvailabilitySlotId() %></td>
+                                                    <td>
+                                                        <% if (apt.getStylistName() != null && !apt.getStylistName().isBlank()) { %>
+                                                            <%= apt.getStylistName() %> (<%= apt.getStylistUserId() %>)
+                                                        <% } else { %>
+                                                            Stylist ID <%= apt.getStylistUserId() %>
+                                                        <% } %>
+                                                    </td>
+                                                    <td>
+                                                        <% if (apt.getSlotStartDateTime() != null && apt.getSlotEndDateTime() != null) { %>
+                                                            <%= apt.getSlotStartDateTime().format(slotFormatter) %> - <%= apt.getSlotEndDateTime().format(DateTimeFormatter.ofPattern("h:mm a")) %>
+                                                        <% } else { %>
+                                                            Slot <%= apt.getAvailabilitySlotId() %>
+                                                        <% } %>
+                                                    </td>
                                                     <td class="text-end">
-                                                        <a class="btn btn-sm btn-secondary" href="/appointments/<%= apt.getId() %>/edit">Modify</a>
+                                                        <span class="text-muted small">placeholder</span>
                                                     </td>
                                                 </tr>
                                             <%
@@ -60,7 +86,7 @@
                                                 } else {
                                             %>
                                                 <tr>
-                                                    <td colspan="4" class="text-center py-5 text-muted">
+                                                    <td colspan="5" class="text-center py-5 text-muted">
                                                         <p class="mb-0">You have no upcoming appointments.</p>
                                                         <button class="btn btn-link px-0" onclick="showBookingFlow()">Book one today</button>
                                                     </td>
@@ -85,7 +111,7 @@
                             <div class="d-flex justify-content-between align-items-center mb-5 pb-4">
                                 <div>
                                     <h2 class="h3 mb-1">Book an Appointment</h2>
-                                    <p class="text-muted mb-0" id="stepIndicator">Step 1: Choose a preferred time</p>
+                                    <p class="text-muted mb-0" id="stepIndicator">Step 1: Choose your service and stylist</p>
                                 </div>
                                 <button class="btn-close" onclick="cancelBooking()" aria-label="Close"></button>
                             </div>
@@ -100,36 +126,8 @@
                                 <% } %>
                                 <input type="hidden" id="selectedSlotId" name="availabilitySlotId" value="">
 
-                                <!-- Step 1: Slot Selection -->
+                                <!-- Step 1: Service & Stylist -->
                                 <div id="step1" class="booking-step active">
-                                    <h4 class="h5 mb-4">Morning</h4>
-                                    <div class="row g-3 mb-5">
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(1, '9:00 AM', this)">9:00 AM</div></div>
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(2, '9:30 AM', this)">9:30 AM</div></div>
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(3, '10:00 AM', this)">10:00 AM</div></div>
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(4, '10:30 AM', this)">10:30 AM</div></div>
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(5, '11:00 AM', this)">11:00 AM</div></div>
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light booking__slot--disabled" title="Taken">11:30 AM</div></div>
-                                    </div>
-
-                                    <h4 class="h5 mb-4">Afternoon</h4>
-                                    <div class="row g-3 mb-5">
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(6, '1:00 PM', this)">1:00 PM</div></div>
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(7, '1:30 PM', this)">1:30 PM</div></div>
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(8, '2:00 PM', this)">2:00 PM</div></div>
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(9, '2:30 PM', this)">2:30 PM</div></div>
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(10, '3:00 PM', this)">3:00 PM</div></div>
-                                        <div class="col-md-2 col-4"><div class="booking__slot py-3 text-center rounded bg-light" onclick="selectSlot(11, '3:30 PM', this)">3:30 PM</div></div>
-                                    </div>
-
-                                    <div class="d-flex justify-content-end gap-2 mt-5">
-                                        <button type="button" class="btn btn-secondary" onclick="cancelBooking()">Cancel</button>
-                                        <button type="button" id="nextToStep2" class="btn btn-primary" onclick="goToStep(2)" disabled>Next Step</button>
-                                    </div>
-                                </div>
-
-                                <!-- Step 2: Service & Stylist -->
-                                <div id="step2" class="booking-step">
                                     <div class="row g-4">
                                         <div class="col-md-6">
                                             <label for="service" class="form-label fw-semibold">Which service would you like?</label>
@@ -150,13 +148,13 @@
                                         <div class="col-md-6">
                                             <label for="stylist" class="form-label fw-semibold">Select your preferred stylist</label>
                                             <select class="form-select form-select-lg" id="stylist" name="stylistUserId" required>
-                                                <option selected disabled value="">Any available stylist</option>
+                                                <option selected disabled value="">Choose a stylist...</option>
                                                 <%
                                                     List<Stylist> stylists = (List<Stylist>) request.getAttribute("stylists");
                                                     if (stylists != null) {
                                                         for (Stylist s : stylists) {
                                                 %>
-                                                    <option value="<%= s.getId() %>"><%= s.getFirstName() %> <%= s.getLastName() %> - <%= s.getSpeciality().toString() %></option>
+                                                    <option value="<%= s.getId() %>" data-speciality-id="<%= s.getSpeciality().getValue() %>"><%= s.getFirstName() %> <%= s.getLastName() %> - <%= s.getSpeciality().toString() %></option>
                                                 <%
                                                         }
                                                     }
@@ -165,19 +163,32 @@
                                         </div>
                                     </div>
 
+                                    <div class="d-flex justify-content-end gap-2 mt-5">
+                                        <button type="button" class="btn btn-secondary" onclick="cancelBooking()">Cancel</button>
+                                        <button type="button" id="nextToStep2" class="btn btn-primary" onclick="loadAndShowSlots()" disabled>Next Step</button>
+                                    </div>
+                                </div>
+
+                                <!-- Step 2: Slot Selection -->
+                                <div id="step2" class="booking-step">
+                                    <h4 class="h5 mb-4">Available time slots</h4>
+                                    <div id="slotContainer" class="row g-3 mb-4"></div>
+                                    <div id="slotEmptyState" class="alert alert-warning d-none">No available slots for this stylist right now.</div>
+
                                     <div class="alert alert-info mt-5">
                                         <div class="d-flex align-items-center">
                                             <div class="me-3 fs-3"><i class="bi bi-clock"></i></div>
                                             <div>
                                                 <h5 class="mb-0 h6">Selected Time</h5>
-                                                <p class="mb-0 text-muted" id="selectedTimeSummary">Not selected</p>
+                                                <p class="mb-1 text-muted" id="selectedTimeSummary">Not selected</p>
+                                                <p class="mb-0 text-muted small" id="selectedDurationSummary"></p>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="d-flex justify-content-between gap-2 mt-5">
                                         <button type="button" class="btn btn-secondary" onclick="goToStep(1)">Back</button>
-                                        <button type="submit" class="btn btn-primary px-5">Confirm Booking</button>
+                                        <button type="submit" id="confirmBooking" class="btn btn-primary px-5" disabled>Confirm Booking</button>
                                     </div>
                                 </div>
                             </form>
@@ -189,6 +200,13 @@
     </main>
 
     <script>
+        const slotContainer = document.getElementById('slotContainer');
+        const slotEmptyState = document.getElementById('slotEmptyState');
+        const stylistSelect = document.getElementById('stylist');
+        const serviceSelect = document.getElementById('service');
+        const nextButton = document.getElementById('nextToStep2');
+        const confirmButton = document.getElementById('confirmBooking');
+
         function showBookingFlow() {
             document.getElementById('dashboardView').style.display = 'none';
             document.getElementById('bookingView').style.display = 'block';
@@ -207,29 +225,107 @@
 
             const indicator = document.getElementById('stepIndicator');
             if (stepNum === 1) {
-                indicator.innerText = "Step 1: Choose a preferred time";
+                indicator.innerText = "Step 1: Choose your service and stylist";
             } else {
-                indicator.innerText = "Step 2: Service & Stylist Preference";
+                indicator.innerText = "Step 2: Choose an available time slot";
             }
         }
 
-        function selectSlot(id, time, el) {
-            if (el.classList.contains('booking__slot--disabled')) return;
-
+        function selectSlot(slot, el) {
             document.querySelectorAll('.booking__slot').forEach(s => s.classList.remove('booking__slot--selected'));
             el.classList.add('booking__slot--selected');
 
-            document.getElementById('selectedSlotId').value = id;
-            document.getElementById('selectedTimeSummary').innerText = time;
-            document.getElementById('nextToStep2').disabled = false;
+            document.getElementById('selectedSlotId').value = slot.id;
+            document.getElementById('selectedTimeSummary').innerText = slot.rangeLabel;
+            document.getElementById('selectedDurationSummary').innerText = 'Duration: ' + slot.durationMinutes + ' minutes';
+            confirmButton.disabled = false;
         }
 
         function resetForm() {
             document.getElementById('bookingForm').reset();
-            document.querySelectorAll('.booking__slot').forEach(s => s.classList.remove('booking__slot--selected'));
-            document.getElementById('nextToStep2').disabled = true;
-            document.getElementById('selectedSlotId').value = '';
+            nextButton.disabled = true;
+            resetSlotSelection();
         }
+
+        function resetSlotSelection() {
+            document.querySelectorAll('.booking__slot').forEach(s => s.classList.remove('booking__slot--selected'));
+            confirmButton.disabled = true;
+            document.getElementById('selectedSlotId').value = '';
+            document.getElementById('selectedTimeSummary').innerText = 'Not selected';
+            document.getElementById('selectedDurationSummary').innerText = '';
+            if (slotContainer) {
+                slotContainer.innerHTML = '';
+            }
+            if (slotEmptyState) {
+                slotEmptyState.classList.add('d-none');
+            }
+        }
+
+        function validateStepOne() {
+            nextButton.disabled = !serviceSelect.value || !stylistSelect.value;
+        }
+
+        function loadAndShowSlots() {
+            const stylistId = stylistSelect.value;
+            if (!stylistId) {
+                return;
+            }
+
+            const selectedStylistOption = stylistSelect.options[stylistSelect.selectedIndex];
+            const selectedServiceId = serviceSelect.value;
+            const selectedStylistSpeciality = selectedStylistOption.getAttribute('data-speciality-id');
+            if (selectedServiceId !== selectedStylistSpeciality) {
+                alert('Please choose a stylist whose speciality matches your service.');
+                return;
+            }
+
+            fetch('/customer/stylists/' + stylistId + '/available-slots')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load available slots.');
+                    }
+                    return response.json();
+                })
+                .then(slots => {
+                    slotContainer.innerHTML = '';
+                    resetSlotSelection();
+
+                    if (!slots.length) {
+                        slotEmptyState.innerText = 'No available slots for this stylist right now.';
+                        slotEmptyState.classList.remove('d-none');
+                    } else {
+                        slotEmptyState.classList.add('d-none');
+                    }
+
+                    slots.forEach(slot => {
+                        const col = document.createElement('div');
+                        col.className = 'col-md-3 col-6';
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'booking__slot py-3 text-center rounded bg-light w-100';
+                        button.innerHTML = '<div class="fw-semibold">' + slot.startLabel + '</div>' +
+                            '<div class="small text-muted">Ends ' + slot.endLabel + ' (' + slot.durationMinutes + ' min)</div>';
+                        button.addEventListener('click', function() {
+                            selectSlot(slot, button);
+                        });
+                        col.appendChild(button);
+                        slotContainer.appendChild(col);
+                    });
+
+                    goToStep(2);
+                })
+                .catch(error => {
+                    slotContainer.innerHTML = '';
+                    slotEmptyState.classList.remove('d-none');
+                    slotEmptyState.innerText = error.message;
+                    goToStep(2);
+                });
+        }
+
+        serviceSelect.addEventListener('change', validateStepOne);
+        stylistSelect.addEventListener('change', validateStepOne);
+        serviceSelect.addEventListener('change', resetSlotSelection);
+        stylistSelect.addEventListener('change', resetSlotSelection);
     </script>
 </body>
 </html>

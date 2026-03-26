@@ -1,9 +1,11 @@
 package edu.sjsu.cmpe172.salon.repository.mysql;
 
+import edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import edu.sjsu.cmpe172.salon.repository.AppointmentRepository;
 import edu.sjsu.cmpe172.salon.repository.mapper.AppointmentDataMapper;
 import edu.sjsu.cmpe172.salon.repository.sql.AppointmentSql;
+import edu.sjsu.cmpe172.salon.repository.sql.AvailabilitySlotSql;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 
@@ -78,18 +80,60 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
 
     @Override
     public Appointment create(Appointment appointment) {
-        try (Connection connection = openConnection();
-             PreparedStatement statement = connection.prepareStatement(AppointmentSql.INSERT, Statement.RETURN_GENERATED_KEYS)) {
-            dataMapper.bindForInsert(statement, appointment);
-            statement.executeUpdate();
-            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    appointment.setId(generatedKeys.getInt(1));
+        return createWithSlotReservation(appointment);
+    }
+
+    @Override
+    public Appointment createWithSlotReservation(Appointment appointment) {
+        Connection connection = null;
+        try {
+            connection = openConnection();
+            connection.setAutoCommit(false);
+
+            try (PreparedStatement lockSlotStatement = connection.prepareStatement(AvailabilitySlotSql.LOCK_SLOT_BY_ID);
+                 PreparedStatement markSlotBookedStatement = connection.prepareStatement(AvailabilitySlotSql.MARK_SLOT_BOOKED_BY_ID);
+                 PreparedStatement insertAppointmentStatement = connection.prepareStatement(AppointmentSql.INSERT, Statement.RETURN_GENERATED_KEYS)) {
+
+                lockSlotStatement.setInt(1, appointment.getAvailabilitySlotId());
+                try (ResultSet resultSet = lockSlotStatement.executeQuery()) {
+                    if (!resultSet.next()) {
+                        throw new IllegalArgumentException("Selected time slot does not exist.");
+                    }
+
+                    int stylistUserId = resultSet.getInt("stylist_user_id");
+                    AvailabilitySlotStatus slotStatus = AvailabilitySlotStatus.fromValue(resultSet.getInt("status"));
+                    if (stylistUserId != appointment.getStylistUserId()) {
+                        throw new IllegalArgumentException("Selected time slot does not belong to the selected stylist.");
+                    }
+                    if (slotStatus != AvailabilitySlotStatus.Available) {
+                        throw new IllegalArgumentException("Selected time slot is no longer available.");
+                    }
+                }
+
+                markSlotBookedStatement.setInt(1, appointment.getAvailabilitySlotId());
+                if (markSlotBookedStatement.executeUpdate() == 0) {
+                    throw new IllegalArgumentException("Selected time slot is no longer available.");
+                }
+
+                dataMapper.bindForInsert(insertAppointmentStatement, appointment);
+                insertAppointmentStatement.executeUpdate();
+                try (ResultSet generatedKeys = insertAppointmentStatement.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        appointment.setId(generatedKeys.getInt(1));
+                    }
                 }
             }
+
+            connection.commit();
             return appointment;
+        } catch (IllegalArgumentException ex) {
+            rollbackQuietly(connection);
+            throw ex;
         } catch (SQLException ex) {
+            rollbackQuietly(connection);
             throw new IllegalStateException("Failed to create appointment", ex);
+        } finally {
+            closeQuietly(connection);
         }
     }
 
@@ -110,12 +154,46 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
 
     @Override
     public boolean deleteById(int id) {
-        try (Connection connection = openConnection();
-             PreparedStatement statement = connection.prepareStatement(AppointmentSql.DELETE_BY_ID)) {
-            statement.setInt(1, id);
-            return statement.executeUpdate() > 0;
+        Connection connection = null;
+        try {
+            connection = openConnection();
+            connection.setAutoCommit(false);
+
+            Integer slotId = null;
+            try (PreparedStatement findStatement = connection.prepareStatement(AppointmentSql.FIND_BY_ID_FOR_UPDATE)) {
+                findStatement.setInt(1, id);
+                try (ResultSet resultSet = findStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        slotId = resultSet.getInt("availability_slot_id");
+                    } else {
+                        connection.rollback();
+                        return false;
+                    }
+                }
+            }
+
+            try (PreparedStatement deleteStatement = connection.prepareStatement(AppointmentSql.DELETE_BY_ID)) {
+                deleteStatement.setInt(1, id);
+                if (deleteStatement.executeUpdate() == 0) {
+                    connection.rollback();
+                    return false;
+                }
+            }
+
+            if (slotId != null) {
+                try (PreparedStatement setAvailableStatement = connection.prepareStatement(AvailabilitySlotSql.MARK_SLOT_AVAILABLE_BY_ID)) {
+                    setAvailableStatement.setInt(1, slotId);
+                    setAvailableStatement.executeUpdate();
+                }
+            }
+
+            connection.commit();
+            return true;
         } catch (SQLException ex) {
+            rollbackQuietly(connection);
             throw new IllegalStateException("Failed to delete appointment " + id, ex);
+        } finally {
+            closeQuietly(connection);
         }
     }
 
@@ -145,6 +223,26 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
             statement.executeUpdate(AppointmentSql.CREATE_TABLE);
         } catch (SQLException ex) {
             throw new IllegalStateException("Failed to initialize appointments schema", ex);
+        }
+    }
+
+    private void rollbackQuietly(Connection connection) {
+        if (connection == null) {
+            return;
+        }
+        try {
+            connection.rollback();
+        } catch (SQLException ignored) {
+        }
+    }
+
+    private void closeQuietly(Connection connection) {
+        if (connection == null) {
+            return;
+        }
+        try {
+            connection.close();
+        } catch (SQLException ignored) {
         }
     }
 }

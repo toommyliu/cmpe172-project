@@ -1,6 +1,6 @@
 package edu.sjsu.cmpe172.salon.model;
 
-import edu.sjsu.cmpe172.salon.enums.AppointmentStatus;
+import edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus;
 
 import java.time.LocalDateTime;
 
@@ -15,7 +15,7 @@ public class AvailabilitySlot {
 
     private LocalDateTime endDateTime;
 
-    private AppointmentStatus status;
+    private AvailabilitySlotStatus status;
 
     public AvailabilitySlot() {
     }
@@ -25,5 +25,55 @@ public class AvailabilitySlot {
         this.stylistUserId = stylistUserId;
         this.startDateTime = startDateTime;
         this.endDateTime = endDateTime;
+        this.status = AvailabilitySlotStatus.Available;
+    }
+
+    public AvailabilitySlot(int id, int stylistUserId, LocalDateTime startDateTime,
+                            LocalDateTime endDateTime, AvailabilitySlotStatus status) {
+        this.id = id;
+        this.stylistUserId = stylistUserId;
+        this.startDateTime = startDateTime;
+        this.endDateTime = endDateTime;
+        this.status = status;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public int getStylistUserId() {
+        return stylistUserId;
+    }
+
+    public void setStylistUserId(int stylistUserId) {
+        this.stylistUserId = stylistUserId;
+    }
+
+    public LocalDateTime getStartDateTime() {
+        return startDateTime;
+    }
+
+    public void setStartDateTime(LocalDateTime startDateTime) {
+        this.startDateTime = startDateTime;
+    }
+
+    public LocalDateTime getEndDateTime() {
+        return endDateTime;
+    }
+
+    public void setEndDateTime(LocalDateTime endDateTime) {
+        this.endDateTime = endDateTime;
+    }
+
+    public AvailabilitySlotStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AvailabilitySlotStatus status) {
+        this.status = status;
     }
 }

@@ -4,23 +4,36 @@ import edu.sjsu.cmpe172.salon.enums.UserRole;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
+import edu.sjsu.cmpe172.salon.service.AvailabilitySlotService;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.HttpStatus;
 
+import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class AppointmentController {
     private final AppointmentService service;
+    private final AvailabilitySlotService availabilitySlotService;
 
-    public AppointmentController(AppointmentService service) {
+    public AppointmentController(AppointmentService service, AvailabilitySlotService availabilitySlotService) {
         this.service = service;
+        this.availabilitySlotService = availabilitySlotService;
     }
 
     @GetMapping("/appointments")
@@ -48,12 +61,19 @@ public class AppointmentController {
     public String createAppointment(@AuthenticationPrincipal SalonUserPrincipal principal,
                                     @ModelAttribute Appointment appointment,
                                     RedirectAttributes redirectAttributes) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
         if (principal.getUserRole() == UserRole.Customer) {
             appointment.setCustomerUserId(principal.getUserId());
         }
-        service.createAppointment(appointment);
-        redirectAttributes.addFlashAttribute("successMessage", "Appointment created successfully.");
-        return "redirect:/appointments";
+        try {
+            service.createAppointment(appointment);
+            redirectAttributes.addFlashAttribute("successMessage", "Appointment created successfully.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/dashboard";
     }
 
     @GetMapping("/appointments/{id}/edit")
@@ -107,5 +127,81 @@ public class AppointmentController {
     @GetMapping("/booking-confirmation")
     public String bookingConfirmation() {
         return "redirect:/dashboard";
+    }
+
+    @GetMapping("/customer/stylists/{stylistId}/available-slots")
+    @ResponseBody
+    public List<Map<String, String>> getAvailableSlotsForStylist(@PathVariable int stylistId,
+                                                                  @AuthenticationPrincipal SalonUserPrincipal principal) {
+        if (principal == null || (principal.getUserRole() != UserRole.Customer && principal.getUserRole() != UserRole.Admin)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized access.");
+        }
+
+        DateTimeFormatter labelFormatter = DateTimeFormatter.ofPattern("EEE, MMM d h:mm a");
+        DateTimeFormatter endFormatter = DateTimeFormatter.ofPattern("h:mm a");
+        return availabilitySlotService.getAvailableSlotsForStylist(stylistId)
+                .stream()
+                .map(slot -> Map.of(
+                        "id", String.valueOf(slot.getId()),
+                        "startDateTime", slot.getStartDateTime().toString(),
+                        "endDateTime", slot.getEndDateTime().toString(),
+                        "label", slot.getStartDateTime().format(labelFormatter),
+                        "startLabel", slot.getStartDateTime().format(labelFormatter),
+                        "endLabel", slot.getEndDateTime().format(endFormatter),
+                        "rangeLabel", slot.getStartDateTime().format(labelFormatter) + " - " + slot.getEndDateTime().format(endFormatter),
+                        "durationMinutes", String.valueOf(Duration.between(slot.getStartDateTime(), slot.getEndDateTime()).toMinutes())
+                ))
+                .toList();
+    }
+
+    @PostMapping("/stylist/availability")
+    public String createAvailabilitySlot(@AuthenticationPrincipal SalonUserPrincipal principal,
+                                         @RequestParam String startDateTime,
+                                         @RequestParam String endDateTime,
+                                         RedirectAttributes redirectAttributes) {
+        if (principal == null || principal.getUserRole() != UserRole.Stylist) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Unauthorized action.");
+            return "redirect:/dashboard";
+        }
+
+        try {
+            LocalDateTime start = parseDateTimeInput(startDateTime);
+            LocalDateTime end = parseDateTimeInput(endDateTime);
+            availabilitySlotService.createSlot(principal.getUserId(), start, end);
+            redirectAttributes.addFlashAttribute("successMessage", "Availability slot created.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/dashboard";
+    }
+
+    @PostMapping("/stylist/availability/{slotId}/delete")
+    public String cancelAvailabilitySlot(@AuthenticationPrincipal SalonUserPrincipal principal,
+                                         @PathVariable int slotId,
+                                         RedirectAttributes redirectAttributes) {
+        if (principal == null || principal.getUserRole() != UserRole.Stylist) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Unauthorized action.");
+            return "redirect:/dashboard";
+        }
+
+        boolean cancelled = availabilitySlotService.cancelSlot(slotId, principal.getUserId());
+        if (cancelled) {
+            redirectAttributes.addFlashAttribute("successMessage", "Availability slot cancelled.");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Only available slots can be cancelled.");
+        }
+        return "redirect:/dashboard";
+    }
+
+    private LocalDateTime parseDateTimeInput(String value) {
+        try {
+            return LocalDateTime.parse(value);
+        } catch (DateTimeParseException ignored) {
+            try {
+                return LocalDateTime.parse(value, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"));
+            } catch (DateTimeParseException ex) {
+                throw new IllegalArgumentException("Invalid date-time format.");
+            }
+        }
     }
 }

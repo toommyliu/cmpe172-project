@@ -1,6 +1,7 @@
 <%@ page import="edu.sjsu.cmpe172.salon.model.Appointment" %>
 <%@ page import="edu.sjsu.cmpe172.salon.enums.Speciality" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
 <!DOCTYPE html>
 <html lang="en">
@@ -36,6 +37,8 @@
             String errorMessage = (String) request.getAttribute("errorMessage");
             Boolean showManagementActions = (Boolean) request.getAttribute("showManagementActions");
             boolean canManage = showManagementActions != null && showManagementActions;
+            DateTimeFormatter slotDateFormatter = DateTimeFormatter.ofPattern("EEE, MMM d h:mm a");
+            DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("h:mm a");
             if (successMessage != null) {
         %>
             <div class="alert alert-success" role="alert"><%= successMessage %></div>
@@ -63,10 +66,10 @@
                 <thead class="table-light">
                     <tr>
                         <th>ID</th>
-                        <% if (!isCustomer) { %><th>Customer ID</th><% } %>
-                        <% if (!isStylist) { %><th>Stylist ID</th><% } %>
+                        <% if (!isCustomer) { %><th>Customer</th><% } %>
+                        <% if (!isStylist) { %><th>Stylist</th><% } %>
                         <th>Service</th>
-                        <th>Slot ID</th>
+                        <th>Slot</th>
                         <% if (canManage) { %>
                             <th>Actions</th>
                         <% } %>
@@ -81,10 +84,33 @@
                     %>
                         <tr>
                             <td><strong>#<%= apt.getId() %></strong></td>
-                            <% if (!isCustomer) { %><td><%= apt.getCustomerUserId() %></td><% } %>
-                            <% if (!isStylist) { %><td><%= apt.getStylistUserId() %></td><% } %>
+                            <% if (!isCustomer) { %>
+                                <td>
+                                    <% if (apt.getCustomerName() != null && !apt.getCustomerName().isBlank()) { %>
+                                        <%= apt.getCustomerName() %> (ID <%= apt.getCustomerUserId() %>)
+                                    <% } else { %>
+                                        Customer ID <%= apt.getCustomerUserId() %>
+                                    <% } %>
+                                </td>
+                            <% } %>
+                            <% if (!isStylist) { %>
+                                <td>
+                                    <% if (apt.getStylistName() != null && !apt.getStylistName().isBlank()) { %>
+                                        <%= apt.getStylistName() %> (ID <%= apt.getStylistUserId() %>)
+                                    <% } else { %>
+                                        Stylist ID <%= apt.getStylistUserId() %>
+                                    <% } %>
+                                </td>
+                            <% } %>
                             <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
-                            <td><%= apt.getAvailabilitySlotId() %></td>
+                            <td>
+                                <% if (apt.getSlotStartDateTime() != null && apt.getSlotEndDateTime() != null) { %>
+                                    <%= apt.getSlotStartDateTime().format(slotDateFormatter) %> -
+                                    <%= apt.getSlotEndDateTime().format(timeOnlyFormatter) %>
+                                <% } else { %>
+                                    Slot <%= apt.getAvailabilitySlotId() %>
+                                <% } %>
+                            </td>
                             <% if (canManage) { %>
                                 <td>
                                     <a class="btn btn-sm btn-outline-secondary" href="/appointments/<%= apt.getId() %>/edit">Edit</a>

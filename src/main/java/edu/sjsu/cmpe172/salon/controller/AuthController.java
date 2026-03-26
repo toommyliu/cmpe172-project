@@ -4,6 +4,7 @@ import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.model.Customer;
 import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
+import edu.sjsu.cmpe172.salon.service.AvailabilitySlotService;
 import edu.sjsu.cmpe172.salon.service.UserService;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -19,10 +20,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AuthController {
     private final UserService userService;
     private final AppointmentService appointmentService;
+    private final AvailabilitySlotService availabilitySlotService;
 
-    public AuthController(UserService userService, AppointmentService appointmentService) {
+    public AuthController(UserService userService,
+                          AppointmentService appointmentService,
+                          AvailabilitySlotService availabilitySlotService) {
         this.userService = userService;
         this.appointmentService = appointmentService;
+        this.availabilitySlotService = availabilitySlotService;
     }
 
     @GetMapping("/login")
@@ -79,6 +84,7 @@ public class AuthController {
             }
             case Stylist -> {
                 model.addAttribute("appointments", appointmentService.getAppointmentsForStylist(principal.getUserId()));
+                model.addAttribute("availabilitySlots", availabilitySlotService.getSlotsForStylist(principal.getUserId()));
                 yield "dashboard/stylist";
             }
             case Customer -> {
