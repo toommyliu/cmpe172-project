@@ -26,6 +26,20 @@ public final class AppointmentSql {
             WHERE id = ?
             """;
 
+    public static final String FIND_BY_CUSTOMER_USER_ID = """
+            SELECT id, customer_user_id, stylist_user_id, service_id, availability_slot_id
+            FROM appointments
+            WHERE customer_user_id = ?
+            ORDER BY id
+            """;
+
+    public static final String FIND_BY_STYLIST_USER_ID = """
+            SELECT id, customer_user_id, stylist_user_id, service_id, availability_slot_id
+            FROM appointments
+            WHERE stylist_user_id = ?
+            ORDER BY id
+            """;
+
     public static final String INSERT = """
             INSERT INTO appointments (customer_user_id, stylist_user_id, service_id, availability_slot_id)
             VALUES (?, ?, ?, ?)

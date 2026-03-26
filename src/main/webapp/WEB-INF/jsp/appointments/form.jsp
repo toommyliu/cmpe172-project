@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Appointment" %>
 <%@ page import="edu.sjsu.cmpe172.salon.enums.Speciality" %>
+<%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
 <!DOCTYPE html>
 <html lang="en">
 <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
@@ -32,7 +33,13 @@
 
         <div class="card booking__card">
             <div class="card-body p-4">
+                <%
+                    CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
+                %>
                 <form method="post" action="<%= formAction %>">
+                    <% if (csrfToken != null) { %>
+                        <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                    <% } %>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label" for="customerUserId">Customer ID</label>

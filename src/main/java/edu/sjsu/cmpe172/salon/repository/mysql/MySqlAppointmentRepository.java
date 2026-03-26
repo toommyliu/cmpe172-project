@@ -67,6 +67,16 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
     }
 
     @Override
+    public List<Appointment> findByCustomerUserId(int customerUserId) {
+        return findByUserId(AppointmentSql.FIND_BY_CUSTOMER_USER_ID, customerUserId);
+    }
+
+    @Override
+    public List<Appointment> findByStylistUserId(int stylistUserId) {
+        return findByUserId(AppointmentSql.FIND_BY_STYLIST_USER_ID, stylistUserId);
+    }
+
+    @Override
     public Appointment create(Appointment appointment) {
         try (Connection connection = openConnection();
              PreparedStatement statement = connection.prepareStatement(AppointmentSql.INSERT, Statement.RETURN_GENERATED_KEYS)) {
@@ -111,6 +121,22 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
 
     private Connection openConnection() throws SQLException {
         return DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+    }
+
+    private List<Appointment> findByUserId(String sql, int userId) {
+        List<Appointment> appointments = new ArrayList<>();
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, userId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    appointments.add(dataMapper.toDomain(resultSet));
+                }
+                return appointments;
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to read appointments for user " + userId, ex);
+        }
     }
 
     private void ensureSchema() {

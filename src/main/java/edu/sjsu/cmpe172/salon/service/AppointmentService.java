@@ -23,6 +23,14 @@ public class AppointmentService {
         return repository.findById(id);
     }
 
+    public List<Appointment> getAppointmentsForCustomer(int customerUserId) {
+        return repository.findByCustomerUserId(customerUserId);
+    }
+
+    public List<Appointment> getAppointmentsForStylist(int stylistUserId) {
+        return repository.findByStylistUserId(stylistUserId);
+    }
+
     public Appointment createAppointment(Appointment appointment) {
         return repository.create(appointment);
     }

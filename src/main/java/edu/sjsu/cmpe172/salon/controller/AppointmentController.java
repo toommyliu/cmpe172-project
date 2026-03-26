@@ -2,9 +2,11 @@ package edu.sjsu.cmpe172.salon.controller;
 
 import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.model.Appointment;
-import edu.sjsu.cmpe172.salon.model.Stylist;
+import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
+import edu.sjsu.cmpe172.salon.service.UserService;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -14,32 +16,39 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
 
 @Controller
 public class AppointmentController {
     private final AppointmentService service;
+    private final UserService userService;
 
-    public AppointmentController(AppointmentService service) {
+    public AppointmentController(AppointmentService service, UserService userService) {
         this.service = service;
-    }
-
-    // the dummy Stylist for now
-    private Stylist getStylist() {
-        var bob = new Stylist();
-        bob.setFirstName("Bob");
-        bob.setLastName("Smith");
-        bob.setEmailAddress("bob.smith@gmail.com");
-        bob.setPassword("password");
-        bob.setSpeciality(Speciality.Coloring);
-        bob.setId(100);
-        return bob;
+        this.userService = userService;
     }
 
     @GetMapping("/appointments")
     public String appointments(Model model) {
         model.addAttribute("appointments", service.getAllAppointments());
+        model.addAttribute("pageTitle", "Appointments");
+        model.addAttribute("showManagementActions", true);
+        return "appointments/index";
+    }
+
+    @GetMapping("/customer/appointments")
+    public String customerAppointments(@AuthenticationPrincipal SalonUserPrincipal principal, Model model) {
+        model.addAttribute("appointments", service.getAppointmentsForCustomer(principal.getUserId()));
+        model.addAttribute("pageTitle", "My Appointments");
+        model.addAttribute("showManagementActions", false);
+        return "appointments/index";
+    }
+
+    @GetMapping("/stylist/appointments")
+    public String stylistAppointments(@AuthenticationPrincipal SalonUserPrincipal principal, Model model) {
+        model.addAttribute("appointments", service.getAppointmentsForStylist(principal.getUserId()));
+        model.addAttribute("pageTitle", "Stylist Schedule");
+        model.addAttribute("showManagementActions", false);
         return "appointments/index";
     }
 
@@ -106,7 +115,7 @@ public class AppointmentController {
         model.addAttribute("specialities", Arrays.stream(Speciality.values())
                 .filter(s -> s != Speciality.None)
                 .collect(Collectors.toList()));
-        model.addAttribute("stylists", List.of(getStylist()));
+        model.addAttribute("stylists", userService.getAllStylists());
         return "booking/book-appointment";
     }
 
