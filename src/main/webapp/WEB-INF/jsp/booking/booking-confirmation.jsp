@@ -1,14 +1,14 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html lang="en">
-<jsp:include page="common/header.jsp" />
+<jsp:include page="/WEB-INF/jsp/common/header.jsp" />
 
 <head>
     <title>The Studio - Booking Confirmed</title>
 </head>
 
 <body>
-    <jsp:include page="common/navbar.jsp" />
+    <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
     <main class="container py-5 d-flex align-items-center justify-content-center" style="height: calc(100vh - 60px);">
         <div class="row justify-content-center w-100">
@@ -71,16 +71,13 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date();
-            const today_1hr30 = new Date(today.getTime() + (90 * 60 * 1_000)); // 90 min * 60 sec/min * 1_000 ms / sec
+            const today_1hr30 = new Date(today.getTime() + (90 * 60 * 1_000));
 
             const date = document.querySelector('#date');
             const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             date.innerHTML = today.toLocaleDateString('en-US', dateOptions);
 
             const time = document.querySelector('#time');
-            /**
-             * @param {Date} d
-             **/
             const formatTime = (d) => d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
             time.innerHTML = formatTime(today) + " - " + formatTime(today_1hr30);
         });

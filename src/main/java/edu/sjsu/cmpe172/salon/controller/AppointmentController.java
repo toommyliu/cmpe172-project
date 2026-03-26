@@ -2,19 +2,20 @@ package edu.sjsu.cmpe172.salon.controller;
 
 import edu.sjsu.cmpe172.salon.enums.Speciality;
 import edu.sjsu.cmpe172.salon.model.Appointment;
-import edu.sjsu.cmpe172.salon.model.Customer;
 import edu.sjsu.cmpe172.salon.model.Stylist;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
 
-import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 public class AppointmentController {
@@ -22,18 +23,6 @@ public class AppointmentController {
 
     public AppointmentController(AppointmentService service) {
         this.service = service;
-    }
-
-    // the dummy Customer for now
-    private Customer getCustomer() {
-        var alice = new Customer();
-        alice.setFirstName("Alice");
-        alice.setLastName("Woods");
-        alice.setEmailAddress("alice.woods@gmail.com");
-        alice.setPassword("password");
-        alice.setPhoneNumber("123-456-7890");
-        alice.setId(1);
-        return alice;
     }
 
     // the dummy Stylist for now
@@ -48,34 +37,68 @@ public class AppointmentController {
         return bob;
     }
 
-    @PostConstruct
-    public void init() {
-        var alice = getCustomer();
-        var bob = getStylist();
-
-        // generate a random speciality
-        List<Speciality> supported = Arrays.stream(Speciality.values())
-                .filter(s -> s != Speciality.None)
-                .collect(Collectors.toList());
-        Random random = new Random();
-        for (int i = 0; i < 5; i++) {
-            Speciality randomValue = supported.get(random.nextInt(supported.size()));
-            service.createAppointment(new Appointment(i, alice.getId(), bob.getId(), randomValue.getValue(), i + 1));
-        }
-    }
-
     @GetMapping("/appointments")
     public String appointments(Model model) {
-        List<Appointment> appointments = service.getAllAppointments();
-        model.addAttribute("helper", new AppointmentHelper(appointments));
-        model.addAttribute("user", getCustomer());
-        model.addAttribute("stylist", getStylist());
-        return "appointments";
+        model.addAttribute("appointments", service.getAllAppointments());
+        return "appointments/index";
+    }
+
+    @GetMapping("/appointments/new")
+    public String newAppointment(Model model) {
+        model.addAttribute("appointment", new Appointment());
+        model.addAttribute("formAction", "/appointments");
+        model.addAttribute("pageTitle", "Create Appointment");
+        return "appointments/form";
+    }
+
+    @PostMapping("/appointments")
+    public String createAppointment(@ModelAttribute Appointment appointment, RedirectAttributes redirectAttributes) {
+        service.createAppointment(appointment);
+        redirectAttributes.addFlashAttribute("successMessage", "Appointment created successfully.");
+        return "redirect:/appointments";
+    }
+
+    @GetMapping("/appointments/{id}/edit")
+    public String editAppointment(@PathVariable int id, Model model, RedirectAttributes redirectAttributes) {
+        return service.getAppointmentById(id)
+                .map(appointment -> {
+                    model.addAttribute("appointment", appointment);
+                    model.addAttribute("formAction", "/appointments/" + id);
+                    model.addAttribute("pageTitle", "Edit Appointment");
+                    return "appointments/form";
+                })
+                .orElseGet(() -> {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Appointment not found.");
+                    return "redirect:/appointments";
+                });
+    }
+
+    @PostMapping("/appointments/{id}")
+    public String updateAppointment(@PathVariable int id, @ModelAttribute Appointment appointment,
+                                    RedirectAttributes redirectAttributes) {
+        appointment.setId(id);
+        try {
+            service.updateAppointment(appointment);
+            redirectAttributes.addFlashAttribute("successMessage", "Appointment updated successfully.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/appointments";
+    }
+
+    @PostMapping("/appointments/{id}/delete")
+    public String deleteAppointment(@PathVariable int id, RedirectAttributes redirectAttributes) {
+        if (service.deleteAppointment(id)) {
+            redirectAttributes.addFlashAttribute("successMessage", "Appointment deleted successfully.");
+        } else {
+            redirectAttributes.addFlashAttribute("errorMessage", "Appointment not found.");
+        }
+        return "redirect:/appointments";
     }
 
     @GetMapping("/available-slots")
     public String availableSlots() {
-        return "available-slots";
+        return "booking/available-slots";
     }
 
     @GetMapping("/book-appointment")
@@ -84,23 +107,11 @@ public class AppointmentController {
                 .filter(s -> s != Speciality.None)
                 .collect(Collectors.toList()));
         model.addAttribute("stylists", List.of(getStylist()));
-        return "book-appointment";
+        return "booking/book-appointment";
     }
 
     @GetMapping("/booking-confirmation")
     public String bookingConfirmation() {
-        return "booking-confirmation";
-    }
-
-    public static class AppointmentHelper {
-        private final List<Appointment> appointments;
-
-        public AppointmentHelper(List<Appointment> appointments) {
-            this.appointments = appointments;
-        }
-
-        public List<Appointment> getAppointments() {
-            return appointments;
-        }
+        return "booking/booking-confirmation";
     }
 }

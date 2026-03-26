@@ -4,14 +4,14 @@
 <%@ page import="edu.sjsu.cmpe172.salon.model.Stylist" %>
 <!DOCTYPE html>
 <html lang="en">
-<jsp:include page="common/header.jsp" />
+<jsp:include page="/WEB-INF/jsp/common/header.jsp" />
 
 <head>
     <title>The Studio - Book Appointment</title>
 </head>
 
 <body>
-    <jsp:include page="common/navbar.jsp" />
+    <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
     <div class="page-header">
         <div class="container page-header__container">
