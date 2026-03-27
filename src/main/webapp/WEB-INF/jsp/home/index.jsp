@@ -16,8 +16,8 @@
 <body>
     <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
     <main class="container d-flex justify-content-center align-items-center" style="height: calc(100vh - 60px);">
-        <div class="text-center">
-            <div class="mx-auto mb-5" style="max-width: 320px;">
+        <div class="text-center" style="min-width: 512px; max-width: 512px;">
+            <div class="mx-auto mb-5">
                 <div class="d-flex align-items-center justify-content-center mb-3 opacity-50">
                     <hr class="flex-grow-1 m-0">
                     <span class="mx-3 small">Business hours</span>
@@ -111,6 +111,7 @@
                     <a href="/register" class="btn btn-outline-secondary px-4">Create Account</a>
                 <% } else { %>
                     <a href="/dashboard" class="btn btn-primary px-4">Go to Dashboard</a>
+                    <a href="/dashboard?new=true" class="btn btn-outline-secondary px-4">Book New Appointment</a>
                 <% } %>
             </div>
         </div>
