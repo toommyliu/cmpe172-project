@@ -17,7 +17,7 @@
     <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
     <main class="container d-flex justify-content-center align-items-center" style="height: calc(100vh - 60px);">
         <div class="text-center">
-            <div class="mx-auto mb-5" style="max-width: 320px;">
+            <div class="mx-auto mb-5" style="max-width: 400px; width: 100%;">
                 <div class="d-flex align-items-center justify-content-center mb-3 opacity-50">
                     <hr class="flex-grow-1 m-0">
                     <span class="mx-3 small">Business hours</span>
@@ -66,9 +66,9 @@
                                     "<span class='text-body-emphasis'>" + currentHours.getOpenTime().format(timeFormatter) + " - " +
                                     currentHours.getCloseTime().format(timeFormatter) + "</span>";
                     %>
-                        <div class="d-flex justify-content-between py-1">
-                            <span class="text-body-secondary"><%= dayRange %></span>
-                            <%= hoursStr %>
+                        <div class="d-flex justify-content-between align-items-baseline py-1 gap-3">
+                            <span class="text-body-secondary text-nowrap"><%= dayRange %></span>
+                            <span class="text-nowrap"><%= hoursStr %></span>
                         </div>
                     <%
                                 i++;
@@ -91,12 +91,12 @@
                             <span class="mx-3 small" style="font-size: 0.75rem;">Special hours</span>
                         </div>
                         <% for (ProviderDateOverride override : upcoming) { %>
-                            <div class="d-flex justify-content-between py-1">
-                                <span class="text-body-secondary"><%= override.getOverrideDate().format(dateFormatter) %></span>
+                            <div class="d-flex justify-content-between align-items-baseline py-1 gap-3">
+                                <span class="text-body-secondary text-nowrap"><%= override.getOverrideDate().format(dateFormatter) %></span>
                                 <% if (override.isClosed()) { %>
-                                    <span class="text-danger opacity-50 text-lowercase">closed</span>
+                                    <span class="text-danger opacity-50 text-lowercase text-nowrap">closed</span>
                                 <% } else { %>
-                                    <span class="text-body-emphasis small text-lowercase"><%= override.getOpenTime().format(timeFormatter) %> - <%= override.getCloseTime().format(timeFormatter) %></span>
+                                    <span class="text-body-emphasis small text-lowercase text-nowrap"><%= override.getOpenTime().format(timeFormatter) %> - <%= override.getCloseTime().format(timeFormatter) %></span>
                                 <% } %>
                             </div>
                         <% } %>
