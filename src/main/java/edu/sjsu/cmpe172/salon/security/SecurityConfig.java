@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/appointments").authenticated()
                         .requestMatchers("/appointments/*/cancel").hasAnyRole("CUSTOMER", "ADMIN", "STYLIST")
+                        .requestMatchers("/appointments/*/complete").hasAnyRole("ADMIN", "STYLIST")
                         .requestMatchers("/appointments/**").hasRole("ADMIN")
                         .requestMatchers("/stylist/**").hasAnyRole("STYLIST", "ADMIN")
                         .requestMatchers("/customer/**", "/available-slots", "/book-appointment", "/booking-confirmation")

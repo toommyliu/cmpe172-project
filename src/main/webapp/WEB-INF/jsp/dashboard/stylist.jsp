@@ -224,6 +224,12 @@
                                             <span class="badge bg-primary">Booked</span>
                                         </td>
                                         <td class="pe-4 text-end">
+                                            <form method="post" action="/appointments/<%= apt.getId() %>/complete" class="d-inline">
+                                                <% if (csrfToken != null) { %>
+                                                    <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                                <% } %>
+                                                <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Mark this appointment as completed?')">Complete</button>
+                                            </form>
                                             <form method="post" action="/appointments/<%= apt.getId() %>/cancel" class="d-inline">
                                                 <% if (csrfToken != null) { %>
                                                     <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">

@@ -145,6 +145,25 @@ public class AppointmentController {
         return "redirect:/dashboard";
     }
 
+    @PostMapping("/appointments/{id}/complete")
+    public String completeAppointment(@PathVariable int id,
+                                      @AuthenticationPrincipal SalonUserPrincipal principal,
+                                      RedirectAttributes redirectAttributes) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        try {
+            if (service.completeAppointment(id, principal.getUserId())) {
+                redirectAttributes.addFlashAttribute("successMessage", "Appointment marked as completed.");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Appointment not found.");
+            }
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/dashboard";
+    }
+
     @GetMapping("/available-slots")
     public String availableSlots() {
         return "redirect:/dashboard";

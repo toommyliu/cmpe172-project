@@ -126,6 +126,24 @@ public class AppointmentService {
         }).orElse(false);
     }
 
+    public boolean completeAppointment(int id, int userId) {
+        return repository.findById(id).map(appointment -> {
+            if (appointment.getStylistUserId() != userId) {
+                throw new IllegalArgumentException("Only the assigned stylist can mark this appointment as completed.");
+            }
+            if (appointment.getStatus() == AppointmentStatus.Complete) {
+                return true; // Already completed
+            }
+            if (appointment.getStatus() == AppointmentStatus.Canceled) {
+                throw new IllegalArgumentException("Cannot complete a canceled appointment.");
+            }
+
+            appointment.setStatus(AppointmentStatus.Complete);
+            repository.update(appointment);
+            return true;
+        }).orElse(false);
+    }
+
     private void validateAppointmentRequest(Appointment appointment) {
         if (appointment.getCustomerUserId() <= 0) {
             throw new IllegalArgumentException("A valid customer is required.");
