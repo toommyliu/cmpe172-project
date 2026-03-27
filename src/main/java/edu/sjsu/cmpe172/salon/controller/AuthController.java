@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -33,11 +35,11 @@ public class AuthController {
     private final ProviderScheduleService providerScheduleService;
 
     public AuthController(UserService userService,
-                          AppointmentService appointmentService,
-                          AvailabilitySlotService availabilitySlotService,
-                          ServiceRepository serviceRepository,
-                          ProviderRepository providerRepository,
-                          ProviderScheduleService providerScheduleService) {
+            AppointmentService appointmentService,
+            AvailabilitySlotService availabilitySlotService,
+            ServiceRepository serviceRepository,
+            ProviderRepository providerRepository,
+            ProviderScheduleService providerScheduleService) {
         this.userService = userService;
         this.appointmentService = appointmentService;
         this.availabilitySlotService = availabilitySlotService;
@@ -58,11 +60,11 @@ public class AuthController {
 
     @PostMapping("/register")
     public String register(@RequestParam String firstName,
-                           @RequestParam String lastName,
-                           @RequestParam String emailAddress,
-                           @RequestParam String password,
-                           @RequestParam(required = false) String phoneNumber,
-                           RedirectAttributes redirectAttributes) {
+            @RequestParam String lastName,
+            @RequestParam String emailAddress,
+            @RequestParam String password,
+            @RequestParam(required = false) String phoneNumber,
+            RedirectAttributes redirectAttributes) {
         if (firstName.isBlank() || lastName.isBlank() || emailAddress.isBlank() || password.isBlank()) {
             redirectAttributes.addFlashAttribute("errorMessage", "All required fields must be provided.");
             return "redirect:/register";
@@ -74,12 +76,10 @@ public class AuthController {
                     lastName.trim(),
                     emailAddress.trim().toLowerCase(),
                     password,
-                    phoneNumber == null ? null : phoneNumber.trim()
-            );
+                    phoneNumber == null ? null : phoneNumber.trim());
             redirectAttributes.addFlashAttribute(
                     "successMessage",
-                    "Account created for " + customer.getEmailAddress() + ". Please sign in."
-            );
+                    "Account created for " + customer.getEmailAddress() + ". Please sign in.");
             return "redirect:/login";
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
@@ -110,27 +110,34 @@ public class AuthController {
                 yield "dashboard/admin";
             }
             case Stylist -> {
-                List<AppointmentDto> appointments = appointmentService.getAppointmentViewsForStylist(principal.getUserId());
-                
+                List<AppointmentDto> appointments = appointmentService
+                        .getAppointmentViewsForStylist(principal.getUserId());
+
                 LocalDateTime now = LocalDateTime.now();
-                java.time.LocalDate today = now.toLocalDate();
+                LocalDate today = now.toLocalDate();
 
                 List<AppointmentDto> upcomingAppointments = appointments.stream()
-                        .filter(a -> a.getStatus() == AppointmentStatus.Booked && (a.getSlotStartDateTime() == null || !a.getSlotStartDateTime().isBefore(now)))
-                        .sorted(java.util.Comparator.comparing(AppointmentDto::getSlotStartDateTime, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                        .filter(a -> a.getStatus() == AppointmentStatus.Booked
+                                && (a.getSlotStartDateTime() == null || !a.getSlotStartDateTime().isBefore(now)))
+                        .sorted(Comparator.comparing(AppointmentDto::getSlotStartDateTime,
+                                Comparator.nullsLast(Comparator.naturalOrder())))
                         .toList();
 
                 List<AppointmentDto> pastAppointments = appointments.stream()
-                        .filter(a -> a.getStatus() != AppointmentStatus.Booked || (a.getSlotStartDateTime() != null && a.getSlotStartDateTime().isBefore(now)))
-                        .sorted(java.util.Comparator.comparing(AppointmentDto::getSlotStartDateTime, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+                        .filter(a -> a.getStatus() != AppointmentStatus.Booked
+                                || (a.getSlotStartDateTime() != null && a.getSlotStartDateTime().isBefore(now)))
+                        .sorted(Comparator.comparing(AppointmentDto::getSlotStartDateTime,
+                                Comparator.nullsLast(Comparator.reverseOrder())))
                         .toList();
 
                 model.addAttribute("upcomingAppointments", upcomingAppointments);
                 model.addAttribute("pastAppointments", pastAppointments);
-                model.addAttribute("availabilitySlots", availabilitySlotService.getSlotsForStylist(principal.getUserId()));
+                model.addAttribute("availabilitySlots",
+                        availabilitySlotService.getSlotsForStylist(principal.getUserId()));
 
                 long upcomingTodayCount = upcomingAppointments.stream()
-                        .filter(a -> a.getSlotStartDateTime() != null && a.getSlotStartDateTime().toLocalDate().equals(today))
+                        .filter(a -> a.getSlotStartDateTime() != null
+                                && a.getSlotStartDateTime().toLocalDate().equals(today))
                         .count();
                 model.addAttribute("upcomingTodayCount", upcomingTodayCount);
 
@@ -143,7 +150,8 @@ public class AuthController {
                 yield "dashboard/stylist";
             }
             case Customer -> {
-                model.addAttribute("appointments", appointmentService.getAppointmentViewsForCustomer(principal.getUserId()));
+                model.addAttribute("appointments",
+                        appointmentService.getAppointmentViewsForCustomer(principal.getUserId()));
                 model.addAttribute("services", serviceRepository.findAll());
                 model.addAttribute("stylists", userService.getAllStylistDtos());
                 yield "dashboard/customer";
