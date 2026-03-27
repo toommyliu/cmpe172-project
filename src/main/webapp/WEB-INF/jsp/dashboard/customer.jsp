@@ -110,19 +110,8 @@
                 <%
                     }
 
-                    List<AppointmentDto> appointments = (List<AppointmentDto>) request.getAttribute("appointments");
-                    List<AppointmentDto> upcoming = new ArrayList<>();
-                    List<AppointmentDto> history = new ArrayList<>();
-                    
-                    if (appointments != null) {
-                        for (AppointmentDto apt : appointments) {
-                            if (apt.getStatus() == AppointmentStatus.Booked) {
-                                upcoming.add(apt);
-                            } else {
-                                history.add(apt);
-                            }
-                        }
-                    }
+                    List<AppointmentDto> upcomingAppointments = (List<AppointmentDto>) request.getAttribute("upcomingAppointments");
+                    List<AppointmentDto> pastAppointments = (List<AppointmentDto>) request.getAttribute("pastAppointments");
                 %>
 
                 <div id="upcoming-tab-content" data-tab="upcoming">
@@ -143,8 +132,8 @@
                                     </thead>
                                     <tbody>
                                         <%
-                                            if (!upcoming.isEmpty()) {
-                                                for (AppointmentDto apt : upcoming) {
+                                            if (upcomingAppointments != null && !upcomingAppointments.isEmpty()) {
+                                                for (AppointmentDto apt : upcomingAppointments) {
                                                     String serviceName = apt.getServiceName();
                                                     if (serviceName == null || serviceName.isBlank()) {
                                                         serviceName = "Service #" + apt.getServiceId();
@@ -199,7 +188,18 @@
                 <div id="history-tab-content" class="hidden" data-tab="history">
                     <div class="card border-0 mb-5">
                         <div class="card-header bg-white border-bottom py-3">
-                            <h2 class="h5 mb-0 fw-bold">Appointment History</h2>
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h2 class="h5 mb-0 fw-bold">Appointment History</h2>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="history-status-filter" class="small text-muted mb-0">Filter:</label>
+                                    <select id="history-status-filter" class="form-select form-select-sm" style="width: auto;">
+                                        <option value="all">All</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Booked">Booked</option>
+                                        <option value="Canceled">Canceled</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
@@ -214,15 +214,15 @@
                                     </thead>
                                     <tbody>
                                         <%
-                                            if (!history.isEmpty()) {
-                                                for (AppointmentDto apt : history) {
+                                            if (pastAppointments != null && !pastAppointments.isEmpty()) {
+                                                for (AppointmentDto apt : pastAppointments) {
                                                     String serviceName = apt.getServiceName();
                                                     if (serviceName == null || serviceName.isBlank()) {
                                                         serviceName = "Service #" + apt.getServiceId();
                                                     }
                                                     String statusBadgeClass = apt.getStatus() == AppointmentStatus.Complete ? "bg-success" : "bg-secondary opacity-75";
                                         %>
-                                            <tr>
+                                            <tr data-status="<%= apt.getStatus().toString() %>">
                                                 <td class="ps-4"><span class="badge bg-primary text-white"><%= serviceName %></span></td>
                                                 <td><div class="small fw-medium"><%= apt.getStylistName() %></div></td>
                                                 <td><div class="small text-muted"><%= apt.getSlotStartDateTime().format(slotFormatter) %></div></td>
@@ -591,6 +591,23 @@
         stylistSelect.addEventListener('change', () => {
             validateStepOne();
             resetSlotSelection();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const statusFilter = document.getElementById('history-status-filter');
+            if (statusFilter) {
+                statusFilter.addEventListener('change', () => {
+                    const selectedStatus = statusFilter.value;
+                    const historyRows = document.querySelectorAll('#history-tab-content tbody tr[data-status]');
+                    historyRows.forEach(row => {
+                        if (selectedStatus === 'all' || row.getAttribute('data-status') === selectedStatus) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            }
         });
     </script>
 </body>

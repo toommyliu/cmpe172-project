@@ -260,7 +260,18 @@
             <div id="history-services-content" class="hidden" data-subtab-content="history">
                 <div class="card border-0 mb-5">
                     <div class="card-header bg-white border-bottom py-3">
-                        <h2 class="h5 mb-0 fw-bold">Service History</h2>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h2 class="h5 mb-0 fw-bold">Service History</h2>
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="history-status-filter" class="small text-muted mb-0">Filter:</label>
+                                <select id="history-status-filter" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="all">All</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Booked">Booked</option>
+                                    <option value="Canceled">Canceled</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -283,7 +294,7 @@
                                                 serviceName = "Service #" + apt.getServiceId();
                                             }
                                 %>
-                                    <tr>
+                                    <tr data-status="<%= apt.getStatus().toString() %>">
                                         <td class="ps-4"><span class="badge bg-secondary text-white"><%= serviceName %></span></td>
                                         <td>
                                             <div class="small fw-medium">
@@ -622,6 +633,23 @@
             }
 
             updateWeekdayRequirement();
+            
+            // History filtering logic
+            const statusFilter = document.getElementById('history-status-filter');
+            const historyRows = document.querySelectorAll('#history-services-content tbody tr[data-status]');
+            
+            if (statusFilter) {
+                statusFilter.addEventListener('change', () => {
+                    const selectedStatus = statusFilter.value;
+                    historyRows.forEach(row => {
+                        if (selectedStatus === 'all' || row.getAttribute('data-status') === selectedStatus) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            }
         });
     </script>
 </body>

@@ -150,8 +150,27 @@ public class AuthController {
                 yield "dashboard/stylist";
             }
             case Customer -> {
-                model.addAttribute("appointments",
-                        appointmentService.getAppointmentViewsForCustomer(principal.getUserId()));
+                List<AppointmentDto> appointments = appointmentService
+                        .getAppointmentViewsForCustomer(principal.getUserId());
+
+                LocalDateTime now = LocalDateTime.now();
+
+                List<AppointmentDto> upcomingAppointments = appointments.stream()
+                        .filter(a -> a.getStatus() == AppointmentStatus.Booked
+                                && (a.getSlotStartDateTime() == null || !a.getSlotStartDateTime().isBefore(now)))
+                        .sorted(Comparator.comparing(AppointmentDto::getSlotStartDateTime,
+                                Comparator.nullsLast(Comparator.naturalOrder())))
+                        .toList();
+
+                List<AppointmentDto> pastAppointments = appointments.stream()
+                        .filter(a -> a.getStatus() != AppointmentStatus.Booked
+                                || (a.getSlotStartDateTime() != null && a.getSlotStartDateTime().isBefore(now)))
+                        .sorted(Comparator.comparing(AppointmentDto::getSlotStartDateTime,
+                                Comparator.nullsLast(Comparator.reverseOrder())))
+                        .toList();
+
+                model.addAttribute("upcomingAppointments", upcomingAppointments);
+                model.addAttribute("pastAppointments", pastAppointments);
                 model.addAttribute("services", serviceRepository.findAll());
                 model.addAttribute("stylists", userService.getAllStylistDtos());
                 yield "dashboard/customer";
