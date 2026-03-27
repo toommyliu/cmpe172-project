@@ -111,6 +111,21 @@ public class MySqlAvailabilitySlotRepository implements AvailabilitySlotReposito
         }
     }
 
+    @Override
+    public AvailabilitySlot update(AvailabilitySlot slot) {
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(AvailabilitySlotSql.UPDATE)) {
+            dataMapper.bindForUpdate(statement, slot);
+            int updatedRows = statement.executeUpdate();
+            if (updatedRows == 0) {
+                throw new IllegalArgumentException("Availability slot not found: " + slot.getId());
+            }
+            return slot;
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to update availability slot " + slot.getId(), ex);
+        }
+    }
+
     private List<AvailabilitySlot> findByStylist(int stylistUserId, String sql) {
         List<AvailabilitySlot> slots = new ArrayList<>();
         try (Connection connection = openConnection();

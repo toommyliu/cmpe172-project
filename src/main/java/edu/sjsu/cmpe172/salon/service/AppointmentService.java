@@ -1,5 +1,6 @@
 package edu.sjsu.cmpe172.salon.service;
 
+import edu.sjsu.cmpe172.salon.enums.AppointmentStatus;
 import edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus;
 import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
 import edu.sjsu.cmpe172.salon.model.Appointment;
@@ -101,6 +102,28 @@ public class AppointmentService {
 
     public boolean deleteAppointment(int id) {
         return repository.deleteById(id);
+    }
+
+    public boolean cancelAppointment(int id, int customerUserId) {
+        return repository.findById(id).map(appointment -> {
+            if (appointment.getCustomerUserId() != customerUserId) {
+                throw new IllegalArgumentException("You are not authorized to cancel this appointment.");
+            }
+            if (appointment.getStatus() == AppointmentStatus.Canceled) {
+                return true; // Already canceled
+            }
+
+            appointment.setStatus(AppointmentStatus.Canceled);
+            repository.update(appointment);
+
+            // Make the slot available again
+            availabilitySlotRepository.findById(appointment.getAvailabilitySlotId()).ifPresent(slot -> {
+                slot.setStatus(AvailabilitySlotStatus.Available);
+                availabilitySlotRepository.update(slot);
+            });
+
+            return true;
+        }).orElse(false);
     }
 
     private void validateAppointmentRequest(Appointment appointment) {

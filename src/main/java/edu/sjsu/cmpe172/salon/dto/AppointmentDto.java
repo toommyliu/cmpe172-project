@@ -1,5 +1,6 @@
 package edu.sjsu.cmpe172.salon.dto;
 
+import edu.sjsu.cmpe172.salon.enums.AppointmentStatus;
 import java.time.LocalDateTime;
 
 public class AppointmentDto {
@@ -13,6 +14,7 @@ public class AppointmentDto {
     private String stylistName;
     private LocalDateTime slotStartDateTime;
     private LocalDateTime slotEndDateTime;
+    private AppointmentStatus status;
 
     public int getId() {
         return id;
@@ -92,5 +94,13 @@ public class AppointmentDto {
 
     public void setSlotEndDateTime(LocalDateTime slotEndDateTime) {
         this.slotEndDateTime = slotEndDateTime;
+    }
+
+    public AppointmentStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AppointmentStatus status) {
+        this.status = status;
     }
 }

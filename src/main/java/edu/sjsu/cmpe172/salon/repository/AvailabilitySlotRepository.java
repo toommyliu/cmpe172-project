@@ -18,4 +18,6 @@ public interface AvailabilitySlotRepository {
     AvailabilitySlot create(AvailabilitySlot slot);
 
     boolean cancelAvailableSlotByIdAndStylistUserId(int id, int stylistUserId);
+
+    AvailabilitySlot update(AvailabilitySlot slot);
 }

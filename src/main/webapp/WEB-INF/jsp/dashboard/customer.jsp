@@ -3,7 +3,9 @@
 <%@ page import="edu.sjsu.cmpe172.salon.model.Stylist" %>
 <%@ page import="edu.sjsu.cmpe172.salon.dto.StylistDto" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Service" %>
+<%@ page import="edu.sjsu.cmpe172.salon.enums.AppointmentStatus" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
 <!DOCTYPE html>
@@ -44,7 +46,7 @@
 
                             <div class="mt-5">
                                 <h2 class="h5 mb-4">Your Upcoming Appointments</h2>
-                                <div class="table-responsive bg-white rounded">
+                                <div class="table-responsive bg-white rounded overflow-hidden">
                                     <table class="table table-hover align-middle mb-0">
                                         <thead class="table-light">
                                             <tr>
@@ -58,8 +60,21 @@
                                         <tbody>
                                             <%
                                                 List<AppointmentDto> appointments = (List<AppointmentDto>) request.getAttribute("appointments");
-                                                if (appointments != null && !appointments.isEmpty()) {
+                                                List<AppointmentDto> upcoming = new ArrayList<>();
+                                                List<AppointmentDto> history = new ArrayList<>();
+                                                
+                                                if (appointments != null) {
                                                     for (AppointmentDto apt : appointments) {
+                                                        if (apt.getStatus() == AppointmentStatus.Booked || apt.getStatus() == AppointmentStatus.Pending) {
+                                                            upcoming.add(apt);
+                                                        } else {
+                                                            history.add(apt);
+                                                        }
+                                                    }
+                                                }
+
+                                                if (!upcoming.isEmpty()) {
+                                                    for (AppointmentDto apt : upcoming) {
                                                         String serviceName = apt.getServiceName();
                                                         if (serviceName == null || serviceName.isBlank()) {
                                                             serviceName = "Service #" + apt.getServiceId();
@@ -70,20 +85,22 @@
                                                     <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
                                                     <td>
                                                         <% if (apt.getStylistName() != null && !apt.getStylistName().isBlank()) { %>
-                                                            <%= apt.getStylistName() %> (<%= apt.getStylistUserId() %>)
+                                                            <%= apt.getStylistName() %>
                                                         <% } else { %>
                                                             Stylist ID <%= apt.getStylistUserId() %>
                                                         <% } %>
                                                     </td>
                                                     <td>
                                                         <% if (apt.getSlotStartDateTime() != null && apt.getSlotEndDateTime() != null) { %>
-                                                            <%= apt.getSlotStartDateTime().format(slotFormatter) %> - <%= apt.getSlotEndDateTime().format(DateTimeFormatter.ofPattern("h:mm a")) %>
+                                                            <%= apt.getSlotStartDateTime().format(slotFormatter) %>
                                                         <% } else { %>
                                                             Slot <%= apt.getAvailabilitySlotId() %>
                                                         <% } %>
                                                     </td>
                                                     <td class="text-end">
-                                                        <span class="text-muted small">placeholder</span>
+                                                        <button class="btn btn-sm btn-outline-danger" onclick="cancelAppointment(<%= apt.getId() %>)">
+                                                            <i class="bi bi-x-circle me-1"></i>Cancel
+                                                        </button>
                                                     </td>
                                                 </tr>
                                             <%
@@ -94,6 +111,55 @@
                                                     <td colspan="5" class="text-center py-5 text-muted">
                                                         <p class="mb-0">You have no upcoming appointments.</p>
                                                         <button class="btn btn-link px-0" onclick="showBookingFlow()">Book one today</button>
+                                                    </td>
+                                                </tr>
+                                            <%
+                                                }
+                                            %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 pt-4">
+                                <h2 class="h5 mb-4">Appointment History</h2>
+                                <div class="table-responsive bg-white rounded overflow-hidden">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Service</th>
+                                                <th>Stylist</th>
+                                                <th>Date</th>
+                                                <th class="text-end">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <%
+                                                if (!history.isEmpty()) {
+                                                    for (AppointmentDto apt : history) {
+                                                        String serviceName = apt.getServiceName();
+                                                        if (serviceName == null || serviceName.isBlank()) {
+                                                            serviceName = "Service #" + apt.getServiceId();
+                                                        }
+                                                        String statusClass = apt.getStatus() == AppointmentStatus.Complete ? "bg-success" : "bg-secondary opacity-75";
+                                            %>
+                                                <tr>
+                                                    <td><strong>#<%= apt.getId() %></strong></td>
+                                                    <td><span class="badge bg-light text-dark border"><%= serviceName %></span></td>
+                                                    <td><%= apt.getStylistName() %></td>
+                                                    <td><%= apt.getSlotStartDateTime().format(slotFormatter) %></td>
+                                                    <td class="text-end">
+                                                        <span class="badge <%= statusClass %> text-white"><%= apt.getStatus().toString() %></span>
+                                                    </td>
+                                                </tr>
+                                            <%
+                                                    }
+                                                } else {
+                                            %>
+                                                <tr>
+                                                    <td colspan="5" class="text-center py-4 text-muted small">
+                                                        No past appointments found.
                                                     </td>
                                                 </tr>
                                             <%
@@ -390,6 +456,39 @@
                     slotEmptyState.innerText = error.message;
                     goToStep(2);
                 });
+        }
+
+        async function cancelAppointment(id) {
+            if (!confirm('Are you sure you want to cancel this appointment? This action cannot be undone.')) {
+                return;
+            }
+
+            const formData = new FormData();
+            const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
+            if (csrfToken) {
+                formData.append('_csrf', csrfToken);
+            }
+
+            try {
+                const response = await fetch('/appointments/' + id + '/cancel', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    const message = await response.text();
+                    alert('Failed to cancel appointment: ' + (message || 'Unknown error (' + response.status + ')'));
+                }
+            } catch (error) {
+                console.error('Error cancelling appointment:', error);
+                alert('An error occurred while cancelling the appointment.');
+            }
         }
 
         serviceSelect.addEventListener('change', () => {

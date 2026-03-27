@@ -27,4 +27,12 @@ public class AvailabilitySlotDataMapper {
         statement.setTimestamp(3, Timestamp.valueOf(slot.getEndDateTime()));
         statement.setInt(4, slot.getStatus().getValue());
     }
+
+    public void bindForUpdate(PreparedStatement statement, AvailabilitySlot slot) throws SQLException {
+        statement.setInt(1, slot.getStylistUserId());
+        statement.setTimestamp(2, Timestamp.valueOf(slot.getStartDateTime()));
+        statement.setTimestamp(3, Timestamp.valueOf(slot.getEndDateTime()));
+        statement.setInt(4, slot.getStatus().getValue());
+        statement.setInt(5, slot.getId());
+    }
 }

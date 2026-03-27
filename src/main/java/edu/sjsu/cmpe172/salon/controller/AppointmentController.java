@@ -126,6 +126,25 @@ public class AppointmentController {
         return "redirect:/appointments";
     }
 
+    @PostMapping("/appointments/{id}/cancel")
+    public String cancelAppointment(@PathVariable int id,
+                                    @AuthenticationPrincipal SalonUserPrincipal principal,
+                                    RedirectAttributes redirectAttributes) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        try {
+            if (service.cancelAppointment(id, principal.getUserId())) {
+                redirectAttributes.addFlashAttribute("successMessage", "Appointment cancelled successfully.");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Appointment not found.");
+            }
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/dashboard";
+    }
+
     @GetMapping("/available-slots")
     public String availableSlots() {
         return "redirect:/dashboard";

@@ -82,4 +82,13 @@ public final class AvailabilitySlotSql {
             SET status = 1
             WHERE id = ?
             """;
+
+    public static final String UPDATE = """
+            UPDATE availability_slots
+            SET stylist_user_id = ?,
+                start_datetime = ?,
+                end_datetime = ?,
+                status = ?
+            WHERE id = ?
+            """;
 }

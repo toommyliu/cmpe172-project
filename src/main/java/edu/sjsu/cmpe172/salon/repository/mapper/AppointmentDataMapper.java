@@ -1,5 +1,6 @@
 package edu.sjsu.cmpe172.salon.repository.mapper;
 
+import edu.sjsu.cmpe172.salon.enums.AppointmentStatus;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,7 @@ public class AppointmentDataMapper {
         appointment.setStylistUserId(resultSet.getInt("stylist_user_id"));
         appointment.setServiceId(resultSet.getInt("service_id"));
         appointment.setAvailabilitySlotId(resultSet.getInt("availability_slot_id"));
+        appointment.setStatus(AppointmentStatus.fromValue(resultSet.getInt("status")));
         return appointment;
     }
 
@@ -24,6 +26,7 @@ public class AppointmentDataMapper {
         statement.setInt(2, appointment.getStylistUserId());
         statement.setInt(3, appointment.getServiceId());
         statement.setInt(4, appointment.getAvailabilitySlotId());
+        statement.setInt(5, appointment.getStatus().getValue());
     }
 
     public void bindForUpdate(PreparedStatement statement, Appointment appointment) throws SQLException {
@@ -31,6 +34,7 @@ public class AppointmentDataMapper {
         statement.setInt(2, appointment.getStylistUserId());
         statement.setInt(3, appointment.getServiceId());
         statement.setInt(4, appointment.getAvailabilitySlotId());
-        statement.setInt(5, appointment.getId());
+        statement.setInt(5, appointment.getStatus().getValue());
+        statement.setInt(6, appointment.getId());
     }
 }

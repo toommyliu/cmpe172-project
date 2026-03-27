@@ -1,5 +1,6 @@
 package edu.sjsu.cmpe172.salon.repository.mapper;
 
+import edu.sjsu.cmpe172.salon.enums.AppointmentStatus;
 import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,7 @@ public class AppointmentDtoDataMapper {
         appointment.setAvailabilitySlotId(resultSet.getInt("availability_slot_id"));
         appointment.setCustomerName(resultSet.getString("customer_name"));
         appointment.setStylistName(resultSet.getString("stylist_name"));
+        appointment.setStatus(AppointmentStatus.fromValue(resultSet.getInt("status")));
         Timestamp slotStart = resultSet.getTimestamp("slot_start_datetime");
         Timestamp slotEnd = resultSet.getTimestamp("slot_end_datetime");
         if (slotStart != null) {

@@ -11,6 +11,7 @@ public final class AppointmentSql {
                 stylist_user_id INT NOT NULL,
                 service_id INT NOT NULL,
                 availability_slot_id INT NOT NULL,
+                status INT NOT NULL DEFAULT 1,
                 CONSTRAINT fk_appointments_services
                     FOREIGN KEY (service_id) REFERENCES services(id)
             )
@@ -27,7 +28,8 @@ public final class AppointmentSql {
                 CONCAT(cu.first_name, ' ', cu.last_name) AS customer_name,
                 CONCAT(su.first_name, ' ', su.last_name) AS stylist_name,
                 s.start_datetime AS slot_start_datetime,
-                s.end_datetime AS slot_end_datetime
+                s.end_datetime AS slot_end_datetime,
+                a.status
             FROM appointments a
             INNER JOIN users cu ON cu.id = a.customer_user_id
             INNER JOIN users su ON su.id = a.stylist_user_id
@@ -47,7 +49,8 @@ public final class AppointmentSql {
                 CONCAT(cu.first_name, ' ', cu.last_name) AS customer_name,
                 CONCAT(su.first_name, ' ', su.last_name) AS stylist_name,
                 s.start_datetime AS slot_start_datetime,
-                s.end_datetime AS slot_end_datetime
+                s.end_datetime AS slot_end_datetime,
+                a.status
             FROM appointments a
             INNER JOIN users cu ON cu.id = a.customer_user_id
             INNER JOIN users su ON su.id = a.stylist_user_id
@@ -67,7 +70,8 @@ public final class AppointmentSql {
                 CONCAT(cu.first_name, ' ', cu.last_name) AS customer_name,
                 CONCAT(su.first_name, ' ', su.last_name) AS stylist_name,
                 s.start_datetime AS slot_start_datetime,
-                s.end_datetime AS slot_end_datetime
+                s.end_datetime AS slot_end_datetime,
+                a.status
             FROM appointments a
             INNER JOIN users cu ON cu.id = a.customer_user_id
             INNER JOIN users su ON su.id = a.stylist_user_id
@@ -88,7 +92,8 @@ public final class AppointmentSql {
                 CONCAT(cu.first_name, ' ', cu.last_name) AS customer_name,
                 CONCAT(su.first_name, ' ', su.last_name) AS stylist_name,
                 s.start_datetime AS slot_start_datetime,
-                s.end_datetime AS slot_end_datetime
+                s.end_datetime AS slot_end_datetime,
+                a.status
             FROM appointments a
             INNER JOIN users cu ON cu.id = a.customer_user_id
             INNER JOIN users su ON su.id = a.stylist_user_id
@@ -105,8 +110,8 @@ public final class AppointmentSql {
             """;
 
     public static final String INSERT = """
-            INSERT INTO appointments (customer_user_id, stylist_user_id, service_id, availability_slot_id)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO appointments (customer_user_id, stylist_user_id, service_id, availability_slot_id, status)
+            VALUES (?, ?, ?, ?, ?)
             """;
 
     public static final String UPDATE = """
@@ -114,7 +119,8 @@ public final class AppointmentSql {
             SET customer_user_id = ?,
                 stylist_user_id = ?,
                 service_id = ?,
-                availability_slot_id = ?
+                availability_slot_id = ?,
+                status = ?
             WHERE id = ?
             """;
 
@@ -124,7 +130,7 @@ public final class AppointmentSql {
             """;
 
     public static final String FIND_BY_ID_FOR_UPDATE = """
-            SELECT id, customer_user_id, stylist_user_id, service_id, availability_slot_id
+            SELECT id, customer_user_id, stylist_user_id, service_id, availability_slot_id, status
             FROM appointments
             WHERE id = ?
             FOR UPDATE

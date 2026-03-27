@@ -19,9 +19,11 @@ public enum AppointmentStatus {
 
     public String toString() {
         return switch (this.value) {
-            case 1 -> "pending";
-            case 2 -> "in progress";
-            default -> "unknown";
+            case 1 -> "Booked";
+            case 2 -> "Pending";
+            case 3 -> "Completed";
+            case 100 -> "Canceled";
+            default -> "Unknown";
         };
     }
 
@@ -29,6 +31,8 @@ public enum AppointmentStatus {
         return switch (value) {
             case 1 -> Booked;
             case 2 -> Pending;
+            case 3 -> Complete;
+            case 100 -> Canceled;
             default -> Unknown;
         };
     }
