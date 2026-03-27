@@ -164,6 +164,9 @@
                                                     }
                                                 %>
                                             </select>
+                                            <div id="noStylistsHint" class="alert alert-warning d-none mt-2">
+                                                No stylists are currently available for this service.
+                                            </div>
                                         </div>
                                     </div>
 
@@ -210,6 +213,7 @@
             if (url.searchParams?.get('new') === 'true') {
                 showBookingFlow();
             }
+            filterStylists();
         });
 
         const slotContainer = document.getElementById('slotContainer');
@@ -277,6 +281,50 @@
             nextButton.disabled = !serviceSelect.value || !stylistSelect.value;
         }
 
+        function filterStylists() {
+            const selectedServiceId = serviceSelect.value;
+            const currentStylistId = stylistSelect.value;
+            let currentStylistStillValid = false;
+            let matchCount = 0;
+
+            // Show/hide stylist options based on service selection
+            Array.from(stylistSelect.options).forEach(option => {
+                if (!option.value) {
+                    // Skip the "Choose a stylist..." option
+                    return;
+                }
+
+                const stylistServiceId = option.getAttribute('data-service-id');
+                if (!selectedServiceId || stylistServiceId === selectedServiceId) {
+                    option.style.display = '';
+                    option.disabled = false;
+                    matchCount++;
+                    if (option.value === currentStylistId) {
+                        currentStylistStillValid = true;
+                    }
+                } else {
+                    option.style.display = 'none';
+                    option.disabled = true;
+                }
+            });
+
+            // Show hint if no stylists match the service
+            const hint = document.getElementById('noStylistsHint');
+            if (selectedServiceId && matchCount === 0) {
+                hint.classList.remove('d-none');
+                stylistSelect.disabled = true;
+            } else {
+                hint.classList.add('d-none');
+                stylistSelect.disabled = false;
+            }
+
+            // If the currently selected stylist is no longer valid, reset the selection
+            if (currentStylistId && !currentStylistStillValid) {
+                stylistSelect.value = '';
+                validateStepOne();
+            }
+        }
+
         function loadAndShowSlots() {
             const stylistId = stylistSelect.value;
             if (!stylistId) {
@@ -335,9 +383,12 @@
                 });
         }
 
-        serviceSelect.addEventListener('change', validateStepOne);
+        serviceSelect.addEventListener('change', () => {
+            filterStylists();
+            validateStepOne();
+            resetSlotSelection();
+        });
         stylistSelect.addEventListener('change', validateStepOne);
-        serviceSelect.addEventListener('change', resetSlotSelection);
         stylistSelect.addEventListener('change', resetSlotSelection);
     </script>
 </body>
