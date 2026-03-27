@@ -45,8 +45,6 @@ public class UserDataMapper {
         Stylist stylist = new Stylist();
         hydrateBase(resultSet, stylist);
         stylist.setServiceId(resultSet.getInt("service_id"));
-        stylist.setServiceName(resultSet.getString("service_name"));
-        stylist.setServiceDurationMinutes(resultSet.getInt("service_duration_minutes"));
         return stylist;
     }
 

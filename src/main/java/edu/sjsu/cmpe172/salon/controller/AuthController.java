@@ -108,15 +108,17 @@ public class AuthController {
                 model.addAttribute("appointments", appointmentService.getAppointmentViewsForStylist(principal.getUserId()));
                 model.addAttribute("availabilitySlots", availabilitySlotService.getSlotsForStylist(principal.getUserId()));
                 if (principal.getUser() instanceof Stylist stylist) {
-                    model.addAttribute("stylistServiceName", stylist.getServiceName());
-                    model.addAttribute("stylistServiceDurationMinutes", stylist.getServiceDurationMinutes());
+                    serviceRepository.findById(stylist.getServiceId()).ifPresent(service -> {
+                        model.addAttribute("stylistServiceName", service.getName());
+                        model.addAttribute("stylistServiceDurationMinutes", service.getDurationMinutes());
+                    });
                 }
                 yield "dashboard/stylist";
             }
             case Customer -> {
                 model.addAttribute("appointments", appointmentService.getAppointmentViewsForCustomer(principal.getUserId()));
                 model.addAttribute("services", serviceRepository.findAll());
-                model.addAttribute("stylists", userService.getAllStylists());
+                model.addAttribute("stylists", userService.getAllStylistDtos());
                 yield "dashboard/customer";
             }
         };
