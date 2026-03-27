@@ -129,7 +129,7 @@
         </header>
 
         <main class="dashboard-content" id="dashboard-scroll-area" data-bs-spy="scroll" data-bs-target="#availability-scrollspy" data-bs-offset="100">
-            <div class="container pb-4">
+            <div class="container py-4">
         <%
             CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
             String successMessage = (String) request.getAttribute("successMessage");
@@ -161,7 +161,7 @@
         %>
 
         <div id="appointments-tab-content" data-tab="appointments">
-            <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex justify-content-between align-items-center mt-3 mb-4">
                 <ul class="nav nav-pills gap-2" id="appointment-subtabs">
                     <li class="nav-item">
                         <button class="btn btn-sm btn-primary px-4 active" data-subtab="upcoming">Upcoming</button>
