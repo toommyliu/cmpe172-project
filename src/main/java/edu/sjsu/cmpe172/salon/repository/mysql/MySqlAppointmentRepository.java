@@ -2,6 +2,7 @@ package edu.sjsu.cmpe172.salon.repository.mysql;
 
 import edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus;
 import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
+import edu.sjsu.cmpe172.salon.exception.SlotReservationConflictException;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import edu.sjsu.cmpe172.salon.repository.AppointmentRepository;
 import edu.sjsu.cmpe172.salon.repository.mapper.AppointmentDataMapper;
@@ -95,30 +96,33 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
         try {
             connection = openConnection();
             connection.setAutoCommit(false);
+            connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
-            try (PreparedStatement lockSlotStatement = connection.prepareStatement(AvailabilitySlotSql.LOCK_SLOT_BY_ID);
-                 PreparedStatement markSlotBookedStatement = connection.prepareStatement(AvailabilitySlotSql.MARK_SLOT_BOOKED_BY_ID);
+            try (PreparedStatement findSlotStatement = connection.prepareStatement(AvailabilitySlotSql.FIND_BY_ID);
+                 PreparedStatement markSlotBookedStatement = connection.prepareStatement(AvailabilitySlotSql.MARK_SLOT_BOOKED_BY_ID_AND_VERSION);
                  PreparedStatement insertAppointmentStatement = connection.prepareStatement(AppointmentSql.INSERT, Statement.RETURN_GENERATED_KEYS)) {
 
-                lockSlotStatement.setInt(1, appointment.getAvailabilitySlotId());
-                try (ResultSet resultSet = lockSlotStatement.executeQuery()) {
+                findSlotStatement.setInt(1, appointment.getAvailabilitySlotId());
+                try (ResultSet resultSet = findSlotStatement.executeQuery()) {
                     if (!resultSet.next()) {
                         throw new IllegalArgumentException("Selected time slot does not exist.");
                     }
 
                     int stylistUserId = resultSet.getInt("stylist_user_id");
                     AvailabilitySlotStatus slotStatus = AvailabilitySlotStatus.fromValue(resultSet.getInt("status"));
+                    int slotVersion = resultSet.getInt("version");
                     if (stylistUserId != appointment.getStylistUserId()) {
                         throw new IllegalArgumentException("Selected time slot does not belong to the selected stylist.");
                     }
                     if (slotStatus != AvailabilitySlotStatus.Available) {
                         throw new IllegalArgumentException("Selected time slot is no longer available.");
                     }
-                }
 
-                markSlotBookedStatement.setInt(1, appointment.getAvailabilitySlotId());
-                if (markSlotBookedStatement.executeUpdate() == 0) {
-                    throw new IllegalArgumentException("Selected time slot is no longer available.");
+                    markSlotBookedStatement.setInt(1, appointment.getAvailabilitySlotId());
+                    markSlotBookedStatement.setInt(2, slotVersion);
+                    if (markSlotBookedStatement.executeUpdate() == 0) {
+                        throw new SlotReservationConflictException("Selected time slot was just booked by another customer.");
+                    }
                 }
 
                 dataMapper.bindForInsert(insertAppointmentStatement, appointment);

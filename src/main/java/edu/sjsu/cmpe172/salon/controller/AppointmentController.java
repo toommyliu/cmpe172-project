@@ -1,6 +1,7 @@
 package edu.sjsu.cmpe172.salon.controller;
 
 import edu.sjsu.cmpe172.salon.enums.UserRole;
+import edu.sjsu.cmpe172.salon.exception.SlotReservationConflictException;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import edu.sjsu.cmpe172.salon.model.Stylist;
 import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
@@ -81,6 +82,9 @@ public class AppointmentController {
         try {
             service.createAppointment(appointment);
             redirectAttributes.addFlashAttribute("successMessage", "Appointment created successfully.");
+        } catch (SlotReservationConflictException ex) {
+            redirectAttributes.addFlashAttribute("bookingConflict", true);
+            return "redirect:/dashboard?tab=book-now";
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }

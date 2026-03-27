@@ -10,7 +10,8 @@ public final class AvailabilitySlotSql {
                 stylist_user_id INT NOT NULL,
                 start_datetime DATETIME NOT NULL,
                 end_datetime DATETIME NOT NULL,
-                status INT NOT NULL
+                status INT NOT NULL,
+                version INT NOT NULL DEFAULT 0
             )
             """;
 
@@ -20,20 +21,20 @@ public final class AvailabilitySlotSql {
             """;
 
     public static final String FIND_BY_ID = """
-            SELECT id, stylist_user_id, start_datetime, end_datetime, status
+            SELECT id, stylist_user_id, start_datetime, end_datetime, status, version
             FROM availability_slots
             WHERE id = ?
             """;
 
     public static final String FIND_BY_STYLIST_USER_ID = """
-            SELECT id, stylist_user_id, start_datetime, end_datetime, status
+            SELECT id, stylist_user_id, start_datetime, end_datetime, status, version
             FROM availability_slots
             WHERE stylist_user_id = ?
             ORDER BY start_datetime
             """;
 
     public static final String FIND_AVAILABLE_BY_STYLIST_USER_ID = """
-            SELECT id, stylist_user_id, start_datetime, end_datetime, status
+            SELECT id, stylist_user_id, start_datetime, end_datetime, status, version
             FROM availability_slots
             WHERE stylist_user_id = ?
               AND status = 1
@@ -51,35 +52,32 @@ public final class AvailabilitySlotSql {
             """;
 
     public static final String INSERT = """
-            INSERT INTO availability_slots (stylist_user_id, start_datetime, end_datetime, status)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO availability_slots (stylist_user_id, start_datetime, end_datetime, status, version)
+            VALUES (?, ?, ?, ?, ?)
             """;
 
     public static final String CANCEL_AVAILABLE_BY_ID_AND_STYLIST = """
             UPDATE availability_slots
-            SET status = 100
+            SET status = 100,
+                version = version + 1
             WHERE id = ?
               AND stylist_user_id = ?
               AND status = 1
             """;
 
-    public static final String LOCK_SLOT_BY_ID = """
-            SELECT id, stylist_user_id, start_datetime, end_datetime, status
-            FROM availability_slots
-            WHERE id = ?
-            FOR UPDATE
-            """;
-
-    public static final String MARK_SLOT_BOOKED_BY_ID = """
+    public static final String MARK_SLOT_BOOKED_BY_ID_AND_VERSION = """
             UPDATE availability_slots
-            SET status = 2
+            SET status = 2,
+                version = version + 1
             WHERE id = ?
               AND status = 1
+              AND version = ?
             """;
 
     public static final String MARK_SLOT_AVAILABLE_BY_ID = """
             UPDATE availability_slots
-            SET status = 1
+            SET status = 1,
+                version = version + 1
             WHERE id = ?
             """;
 
@@ -88,7 +86,8 @@ public final class AvailabilitySlotSql {
             SET stylist_user_id = ?,
                 start_datetime = ?,
                 end_datetime = ?,
-                status = ?
+                status = ?,
+                version = ?
             WHERE id = ?
             """;
 }

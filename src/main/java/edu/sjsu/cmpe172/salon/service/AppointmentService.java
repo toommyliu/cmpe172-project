@@ -3,6 +3,7 @@ package edu.sjsu.cmpe172.salon.service;
 import edu.sjsu.cmpe172.salon.enums.AppointmentStatus;
 import edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus;
 import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
+import edu.sjsu.cmpe172.salon.exception.SlotReservationConflictException;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import edu.sjsu.cmpe172.salon.model.AvailabilitySlot;
 import edu.sjsu.cmpe172.salon.model.Stylist;
@@ -12,14 +13,18 @@ import edu.sjsu.cmpe172.salon.repository.AvailabilitySlotRepository;
 import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
 import edu.sjsu.cmpe172.salon.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.time.Duration;
 
 @Service
 public class AppointmentService {
     private static final int DEFAULT_PROVIDER_ID = 1;
+    private static final int SLOT_RESERVATION_MAX_ATTEMPTS = 3;
 
     private final AppointmentRepository repository;
     private final AvailabilitySlotRepository availabilitySlotRepository;
@@ -55,6 +60,7 @@ public class AppointmentService {
         return repository.findViewsByStylistUserId(stylistUserId);
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Appointment createAppointment(Appointment appointment) {
         validateAppointmentRequest(appointment);
 
@@ -88,22 +94,44 @@ public class AppointmentService {
         if (stylist.getServiceId() != appointment.getServiceId()) {
             throw new IllegalArgumentException("Selected stylist does not provide the chosen service.");
         }
-        long slotDurationMinutes = java.time.Duration.between(slot.getStartDateTime(), slot.getEndDateTime()).toMinutes();
+        long slotDurationMinutes = Duration.between(slot.getStartDateTime(), slot.getEndDateTime()).toMinutes();
         if (slotDurationMinutes != selectedService.getDurationMinutes()) {
             throw new IllegalArgumentException("Selected slot duration does not match the service duration.");
         }
 
-        return repository.createWithSlotReservation(appointment);
+        SlotReservationConflictException lastConflict = null;
+        for (int attempt = 1; attempt <= SLOT_RESERVATION_MAX_ATTEMPTS; attempt++) {
+            try {
+                return repository.createWithSlotReservation(appointment);
+            } catch (SlotReservationConflictException ex) {
+                lastConflict = ex;
+                if (attempt == SLOT_RESERVATION_MAX_ATTEMPTS) {
+                    break;
+                }
+
+                try {
+                    Thread.sleep(50L * attempt);
+                } catch (InterruptedException interruptedEx) {
+                    Thread.currentThread().interrupt();
+                    throw new SlotReservationConflictException("Selected time slot was just booked by another customer.", interruptedEx);
+                }
+            }
+        }
+
+        throw new SlotReservationConflictException("Selected time slot was just booked by another customer.", lastConflict);
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Appointment updateAppointment(Appointment appointment) {
         return repository.update(appointment);
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public boolean deleteAppointment(int id) {
         return repository.deleteById(id);
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public boolean cancelAppointment(int id, int userId) {
         return repository.findById(id).map(appointment -> {
             if (appointment.getCustomerUserId() != userId && appointment.getStylistUserId() != userId) {
@@ -126,6 +154,7 @@ public class AppointmentService {
         }).orElse(false);
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public boolean completeAppointment(int id, int userId) {
         return repository.findById(id).map(appointment -> {
             if (appointment.getStylistUserId() != userId) {

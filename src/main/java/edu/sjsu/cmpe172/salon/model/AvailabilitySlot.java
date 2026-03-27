@@ -17,6 +17,8 @@ public class AvailabilitySlot {
 
     private AvailabilitySlotStatus status;
 
+    private int version;
+
     public AvailabilitySlot() {
     }
 
@@ -26,6 +28,7 @@ public class AvailabilitySlot {
         this.startDateTime = startDateTime;
         this.endDateTime = endDateTime;
         this.status = AvailabilitySlotStatus.Available;
+        this.version = 0;
     }
 
     public AvailabilitySlot(int id, int stylistUserId, LocalDateTime startDateTime,
@@ -35,6 +38,7 @@ public class AvailabilitySlot {
         this.startDateTime = startDateTime;
         this.endDateTime = endDateTime;
         this.status = status;
+        this.version = 0;
     }
 
     public int getId() {
@@ -75,5 +79,13 @@ public class AvailabilitySlot {
 
     public void setStatus(AvailabilitySlotStatus status) {
         this.status = status;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
     }
 }

@@ -91,7 +91,17 @@
                 <%
                     String successMessage = (String) request.getAttribute("successMessage");
                     String errorMessage = (String) request.getAttribute("errorMessage");
+                    Boolean bookingConflict = (Boolean) request.getAttribute("bookingConflict");
                     DateTimeFormatter slotFormatter = DateTimeFormatter.ofPattern("EEE, MMM d h:mm a");
+
+                    if (Boolean.TRUE.equals(bookingConflict)) {
+                %>
+                <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+                    <strong>Heads up:</strong> that time slot was booked moments ago. We refreshed availability so you can pick another time.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <%
+                    }
 
                     if (successMessage != null) {
                 %>

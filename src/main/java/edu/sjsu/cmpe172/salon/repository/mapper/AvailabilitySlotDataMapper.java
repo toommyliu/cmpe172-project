@@ -18,6 +18,7 @@ public class AvailabilitySlotDataMapper {
         slot.setStartDateTime(resultSet.getTimestamp("start_datetime").toLocalDateTime());
         slot.setEndDateTime(resultSet.getTimestamp("end_datetime").toLocalDateTime());
         slot.setStatus(AvailabilitySlotStatus.fromValue(resultSet.getInt("status")));
+        slot.setVersion(resultSet.getInt("version"));
         return slot;
     }
 
@@ -26,6 +27,7 @@ public class AvailabilitySlotDataMapper {
         statement.setTimestamp(2, Timestamp.valueOf(slot.getStartDateTime()));
         statement.setTimestamp(3, Timestamp.valueOf(slot.getEndDateTime()));
         statement.setInt(4, slot.getStatus().getValue());
+        statement.setInt(5, slot.getVersion());
     }
 
     public void bindForUpdate(PreparedStatement statement, AvailabilitySlot slot) throws SQLException {
@@ -33,6 +35,7 @@ public class AvailabilitySlotDataMapper {
         statement.setTimestamp(2, Timestamp.valueOf(slot.getStartDateTime()));
         statement.setTimestamp(3, Timestamp.valueOf(slot.getEndDateTime()));
         statement.setInt(4, slot.getStatus().getValue());
-        statement.setInt(5, slot.getId());
+        statement.setInt(5, slot.getVersion());
+        statement.setInt(6, slot.getId());
     }
 }
