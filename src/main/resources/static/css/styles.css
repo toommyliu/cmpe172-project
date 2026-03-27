@@ -118,3 +118,16 @@
 .hidden {
   display: none !important;
 }
+
+/* Remove all shadows */
+* {
+  box-shadow: none !important;
+}
+
+/*
+  For tables in cards, allow headings to be transparent
+  to match the card's background
+*/
+.table .table-light th {
+  background-color: transparent;
+}

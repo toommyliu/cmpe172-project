@@ -135,8 +135,7 @@
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th class="ps-4">ID</th>
-                                            <th>Service</th>
+                                            <th class="ps-4">Service</th>
                                             <th>Stylist</th>
                                             <th>Slot</th>
                                             <th class="pe-4 text-end">Actions</th>
@@ -152,10 +151,9 @@
                                                     }
                                         %>
                                             <tr>
-                                                <td class="ps-4"><strong>#<%= apt.getId() %></strong></td>
-                                                <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
+                                                <td class="ps-4"><span class="badge bg-primary text-white"><%= serviceName %></span></td>
                                                 <td>
-                                                    <div class="fw-semibold">
+                                                    <div class="small fw-medium">
                                                     <% if (apt.getStylistName() != null && !apt.getStylistName().isBlank()) { %>
                                                         <%= apt.getStylistName() %>
                                                     <% } else { %>
@@ -164,7 +162,7 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <div class="small">
+                                                    <div class="small text-muted">
                                                     <% if (apt.getSlotStartDateTime() != null && apt.getSlotEndDateTime() != null) { %>
                                                         <%= apt.getSlotStartDateTime().format(slotFormatter) %>
                                                     <% } else { %>
@@ -183,7 +181,7 @@
                                             } else {
                                         %>
                                             <tr>
-                                                <td colspan="5" class="text-center py-5">
+                                                <td colspan="4" class="text-center py-5">
                                                     <p class="text-muted mb-2">You have no upcoming appointments.</p>
                                                     <button class="btn btn-link px-0" onclick="showBookingFlow()">Book one today</button>
                                                 </td>
@@ -208,8 +206,7 @@
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th class="ps-4">ID</th>
-                                            <th>Service</th>
+                                            <th class="ps-4">Service</th>
                                             <th>Stylist</th>
                                             <th>Date</th>
                                             <th class="pe-4 text-end">Status</th>
@@ -226,9 +223,8 @@
                                                     String statusBadgeClass = apt.getStatus() == AppointmentStatus.Complete ? "bg-success" : "bg-secondary opacity-75";
                                         %>
                                             <tr>
-                                                <td class="ps-4"><strong>#<%= apt.getId() %></strong></td>
-                                                <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
-                                                <td><div class="fw-medium"><%= apt.getStylistName() %></div></td>
+                                                <td class="ps-4"><span class="badge bg-primary text-white"><%= serviceName %></span></td>
+                                                <td><div class="small fw-medium"><%= apt.getStylistName() %></div></td>
                                                 <td><div class="small text-muted"><%= apt.getSlotStartDateTime().format(slotFormatter) %></div></td>
                                                 <td class="pe-4 text-end">
                                                     <span class="badge <%= statusBadgeClass %> text-white"><%= apt.getStatus().toString() %></span>
@@ -239,7 +235,7 @@
                                             } else {
                                         %>
                                             <tr>
-                                                <td colspan="5" class="text-center py-5 text-muted small">
+                                                <td colspan="4" class="text-center py-5 text-muted small">
                                                     No past appointments found.
                                                 </td>
                                             </tr>

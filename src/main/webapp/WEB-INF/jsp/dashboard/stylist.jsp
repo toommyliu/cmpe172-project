@@ -142,93 +142,169 @@
         %>
 
         <div id="appointments-tab-content" data-tab="appointments">
-            <div class="card border-0 mb-5">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h2 class="h5 mb-0 fw-bold">Your Upcoming Services</h2>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>Service</th>
-                                    <th>Customer</th>
-                                    <th>Slot</th>
-                                    <th>Status</th>
-                                    <th class="pe-4 text-end">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            <%
-                                List<AppointmentDto> appointments = (List<AppointmentDto>) request.getAttribute("appointments");
-                                if (appointments != null && !appointments.isEmpty()) {
-                                    for (AppointmentDto apt : appointments) {
-                                        String serviceName = apt.getServiceName();
-                                        if (serviceName == null || serviceName.isBlank()) {
-                                            serviceName = "Service #" + apt.getServiceId();
-                                        }
-                            %>
-                                <tr>
-                                    <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
-                                    <td>
-                                        <div class="fw-semibold">
-                                        <% if (apt.getCustomerName() != null && !apt.getCustomerName().isBlank()) { %>
-                                            <%= apt.getCustomerName() %>
-                                        <% } else { %>
-                                            Customer #<%= apt.getCustomerUserId() %>
-                                        <% } %>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="small">
-                                        <% if (apt.getSlotStartDateTime() != null && apt.getSlotEndDateTime() != null) { %>
-                                            <%= apt.getSlotStartDateTime().format(slotDateFormatter) %> -
-                                            <%= apt.getSlotEndDateTime().format(timeOnlyFormatter) %>
-                                        <% } else { %>
-                                            Slot <%= apt.getAvailabilitySlotId() %>
-                                        <% } %>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <%
-                                            String aptBadgeClass = "bg-secondary";
-                                            if (apt.getStatus() == AppointmentStatus.Booked) {
-                                                aptBadgeClass = "bg-primary";
-                                            } else if (apt.getStatus() == AppointmentStatus.Complete) {
-                                                aptBadgeClass = "bg-success";
-                                            } else if (apt.getStatus() == AppointmentStatus.Canceled) {
-                                                aptBadgeClass = "bg-danger";
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <ul class="nav nav-pills gap-2" id="appointment-subtabs">
+                    <li class="nav-item">
+                        <button class="btn btn-sm btn-primary px-4 active" data-subtab="upcoming">Upcoming</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="btn btn-sm btn-outline-secondary px-4" data-subtab="history">History</button>
+                    </li>
+                </ul>
+            </div>
+
+            <div id="upcoming-services-content" data-subtab-content="upcoming">
+                <div class="card border-0 mb-5">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h2 class="h5 mb-0 fw-bold">Your Upcoming Services</h2>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">Service</th>
+                                        <th>Customer</th>
+                                        <th>Slot</th>
+                                        <th>Status</th>
+                                        <th class="pe-4 text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <%
+                                    List<AppointmentDto> upcomingAppointments = (List<AppointmentDto>) request.getAttribute("upcomingAppointments");
+                                    if (upcomingAppointments != null && !upcomingAppointments.isEmpty()) {
+                                        for (AppointmentDto apt : upcomingAppointments) {
+                                            String serviceName = apt.getServiceName();
+                                            if (serviceName == null || serviceName.isBlank()) {
+                                                serviceName = "Service #" + apt.getServiceId();
                                             }
-                                        %>
-                                        <span class="badge <%= aptBadgeClass %>"><%= apt.getStatus().toString() %></span>
-                                    </td>
-                                    <td class="pe-4 text-end">
-                                        <% if (apt.getStatus() == AppointmentStatus.Booked) { %>
+                                %>
+                                    <tr>
+                                        <td class="ps-4"><span class="badge bg-primary text-white"><%= serviceName %></span></td>
+                                        <td>
+                                            <div class="small fw-medium">
+                                            <% if (apt.getCustomerName() != null && !apt.getCustomerName().isBlank()) { %>
+                                                <%= apt.getCustomerName() %>
+                                            <% } else { %>
+                                                Customer #<%= apt.getCustomerUserId() %>
+                                            <% } %>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small text-muted">
+                                            <% if (apt.getSlotStartDateTime() != null && apt.getSlotEndDateTime() != null) { %>
+                                                <%= apt.getSlotStartDateTime().format(slotDateFormatter) %> -
+                                                <%= apt.getSlotEndDateTime().format(timeOnlyFormatter) %>
+                                            <% } else { %>
+                                                Slot <%= apt.getAvailabilitySlotId() %>
+                                            <% } %>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary">Booked</span>
+                                        </td>
+                                        <td class="pe-4 text-end">
                                             <form method="post" action="/appointments/<%= apt.getId() %>/cancel" class="d-inline">
                                                 <% if (csrfToken != null) { %>
                                                     <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
                                                 <% } %>
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this appointment?')">Cancel</button>
                                             </form>
-                                        <% } else { %>
-                                            <span class="text-muted small">—</span>
-                                        <% } %>
-                                    </td>
-                                </tr>
-                            <%
+                                        </td>
+                                    </tr>
+                                <%
+                                        }
+                                    } else {
+                                %>
+                                    <tr>
+                                        <td colspan="5" class="text-center py-5">
+                                            <p class="text-muted mb-0">No upcoming appointments scheduled.</p>
+                                        </td>
+                                    </tr>
+                                <%
                                     }
-                                } else {
-                            %>
-                                <tr>
-                                    <td colspan="6" class="text-center py-5">
-                                        <p class="text-muted mb-0">No appointments scheduled yet.</p>
-                                    </td>
-                                </tr>
-                            <%
-                                }
-                            %>
-                            </tbody>
-                        </table>
+                                %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="history-services-content" class="hidden" data-subtab-content="history">
+                <div class="card border-0 mb-5">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h2 class="h5 mb-0 fw-bold">Service History</h2>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">Service</th>
+                                        <th>Customer</th>
+                                        <th>Slot</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <%
+                                    List<AppointmentDto> pastAppointments = (List<AppointmentDto>) request.getAttribute("pastAppointments");
+                                    if (pastAppointments != null && !pastAppointments.isEmpty()) {
+                                        for (AppointmentDto apt : pastAppointments) {
+                                            String serviceName = apt.getServiceName();
+                                            if (serviceName == null || serviceName.isBlank()) {
+                                                serviceName = "Service #" + apt.getServiceId();
+                                            }
+                                %>
+                                    <tr>
+                                        <td class="ps-4"><span class="badge bg-secondary text-white"><%= serviceName %></span></td>
+                                        <td>
+                                            <div class="small fw-medium">
+                                            <% if (apt.getCustomerName() != null && !apt.getCustomerName().isBlank()) { %>
+                                                <%= apt.getCustomerName() %>
+                                            <% } else { %>
+                                                Customer #<%= apt.getCustomerUserId() %>
+                                            <% } %>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="small text-muted">
+                                            <% if (apt.getSlotStartDateTime() != null) { %>
+                                                <%= apt.getSlotStartDateTime().format(slotDateFormatter) %>
+                                            <% } else { %>
+                                                Slot <%= apt.getAvailabilitySlotId() %>
+                                            <% } %>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <%
+                                                String aptBadgeClass = "bg-secondary";
+                                                if (apt.getStatus() == AppointmentStatus.Complete) {
+                                                    aptBadgeClass = "bg-success";
+                                                } else if (apt.getStatus() == AppointmentStatus.Canceled) {
+                                                    aptBadgeClass = "bg-danger";
+                                                }
+                                            %>
+                                            <span class="badge <%= aptBadgeClass %>"><%= apt.getStatus().toString() %></span>
+                                        </td>
+                                    </tr>
+                                <%
+                                        }
+                                    } else {
+                                %>
+                                    <tr>
+                                        <td colspan="5" class="text-center py-5">
+                                            <p class="text-muted mb-0">No past appointments found.</p>
+                                        </td>
+                                    </tr>
+                                <%
+                                    }
+                                %>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -449,6 +525,36 @@
                     const targetTab = link.getAttribute('data-tab');
                     switchTab(targetTab);
                     document.getElementById('dashboard-scroll-area').scrollTop = 0;
+                });
+            });
+
+            // Sub-tab logic for Appointments
+            const subTabButtons = document.querySelectorAll('button[data-subtab]');
+            const subTabContents = document.querySelectorAll('div[data-subtab-content]');
+
+            function switchSubTab(targetSubTab) {
+                subTabButtons.forEach(btn => {
+                    if (btn.getAttribute('data-subtab') === targetSubTab) {
+                        btn.classList.add('active', 'btn-primary');
+                        btn.classList.remove('btn-outline-secondary');
+                    } else {
+                        btn.classList.remove('active', 'btn-primary');
+                        btn.classList.add('btn-outline-secondary');
+                    }
+                });
+
+                subTabContents.forEach(content => {
+                    if (content.getAttribute('data-subtab-content') === targetSubTab) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            }
+
+            subTabButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    switchSubTab(btn.getAttribute('data-subtab'));
                 });
             });
 

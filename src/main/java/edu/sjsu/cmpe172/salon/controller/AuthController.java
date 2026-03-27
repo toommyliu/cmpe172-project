@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Controller
@@ -111,12 +111,25 @@ public class AuthController {
             }
             case Stylist -> {
                 List<AppointmentDto> appointments = appointmentService.getAppointmentViewsForStylist(principal.getUserId());
-                model.addAttribute("appointments", appointments);
+                
+                LocalDateTime now = LocalDateTime.now();
+                java.time.LocalDate today = now.toLocalDate();
+
+                List<AppointmentDto> upcomingAppointments = appointments.stream()
+                        .filter(a -> a.getStatus() == AppointmentStatus.Booked && (a.getSlotStartDateTime() == null || !a.getSlotStartDateTime().isBefore(now)))
+                        .sorted(java.util.Comparator.comparing(AppointmentDto::getSlotStartDateTime, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                        .toList();
+
+                List<AppointmentDto> pastAppointments = appointments.stream()
+                        .filter(a -> a.getStatus() != AppointmentStatus.Booked || (a.getSlotStartDateTime() != null && a.getSlotStartDateTime().isBefore(now)))
+                        .sorted(java.util.Comparator.comparing(AppointmentDto::getSlotStartDateTime, java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
+                        .toList();
+
+                model.addAttribute("upcomingAppointments", upcomingAppointments);
+                model.addAttribute("pastAppointments", pastAppointments);
                 model.addAttribute("availabilitySlots", availabilitySlotService.getSlotsForStylist(principal.getUserId()));
 
-                LocalDate today = LocalDate.now();
-                long upcomingTodayCount = appointments.stream()
-                        .filter(a -> a.getStatus() == AppointmentStatus.Booked)
+                long upcomingTodayCount = upcomingAppointments.stream()
                         .filter(a -> a.getSlotStartDateTime() != null && a.getSlotStartDateTime().toLocalDate().equals(today))
                         .count();
                 model.addAttribute("upcomingTodayCount", upcomingTodayCount);
