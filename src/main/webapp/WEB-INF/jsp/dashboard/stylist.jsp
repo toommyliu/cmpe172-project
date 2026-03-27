@@ -37,7 +37,26 @@
     }
 
     .card {
-        scroll-margin-top: 2rem;
+        scroll-margin-top: 6rem;
+    }
+
+    .availability-settings-sticky {
+        position: sticky;
+        top: 0;
+        z-index: 1020;
+        background-color: var(--bs-tertiary-bg);
+        padding-top: 1.5rem; /* Opaque cap to bridge gap to tabs */
+        padding-bottom: 2rem;
+        transition: none;
+    }
+
+    .availability-settings-sticky::after {
+        position: absolute;
+        bottom: 1rem;
+        left: 0;
+        right: 0;
+        height: 1rem;
+        pointer-events: none;
     }
 
     .dashboard-wrapper {
@@ -110,7 +129,7 @@
         </header>
 
         <main class="dashboard-content" id="dashboard-scroll-area" data-bs-spy="scroll" data-bs-target="#availability-scrollspy" data-bs-offset="100">
-            <div class="container py-4">
+            <div class="container pb-4">
         <%
             CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
             String successMessage = (String) request.getAttribute("successMessage");
@@ -313,7 +332,7 @@
         <div id="availability-tab-content" class="hidden" data-tab="availability">
             <div class="row g-4">
                 <div class="col-lg-3 d-none d-lg-block">
-                    <div class="sticky-top" style="top: 1rem; z-index: 10;">
+                    <div class="sticky-top" style="top: 0; z-index: 10; background-color: var(--bs-tertiary-bg); padding-top: 1.5rem;">
                         <nav id="availability-scrollspy" class="nav nav-pills flex-column">
                             <a class="nav-link" href="#create-availability">Create Availability</a>
                             <a class="nav-link ms-3 my-1" href="#one-off-slot">One-Off Slot</a>
@@ -324,8 +343,8 @@
                 </div>
 
                 <div class="col-lg-9">
-                    <div id="create-availability" class="mb-5">
-                        <div class="card border-0 mb-4">
+                    <div class="availability-settings-sticky">
+                        <div id="create-availability" class="card border-0 mb-0">
                             <div class="card-header bg-white border-bottom py-3">
                                 <h2 class="h5 mb-0 fw-bold">Availability Settings</h2>
                             </div>
@@ -336,69 +355,69 @@
                                 </p>
                             </div>
                         </div>
+                    </div>
 
-                        <div id="one-off-slot" class="card border-0 mb-4">
-                            <div class="card-header bg-white border-bottom py-3">
-                                <h3 class="h6 mb-0 fw-bold">Add One-Off Slot</h3>
-                            </div>
-                            <div class="card-body">
-                                <form method="post" action="/stylist/availability" class="row g-3">
-                                    <% if (csrfToken != null) { %>
-                                        <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
-                                    <% } %>
-                                    <div class="col-md-8">
-                                        <label for="startDateTime" class="form-label small text-muted">Start Date & Time</label>
-                                        <input id="startDateTime" name="startDateTime" type="datetime-local" class="form-control" required>
-                                    </div>
-                                    <div class="col-md-4 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary w-100">Add Slot</button>
-                                    </div>
-                                </form>
-                            </div>
+                    <div id="one-off-slot" class="card border-0 mb-4">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h3 class="h6 mb-0 fw-bold">Add One-Off Slot</h3>
                         </div>
+                        <div class="card-body">
+                            <form method="post" action="/stylist/availability" class="row g-3">
+                                <% if (csrfToken != null) { %>
+                                    <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                <% } %>
+                                <div class="col-md-8">
+                                    <label for="startDateTime" class="form-label small text-muted">Start Date & Time</label>
+                                    <input id="startDateTime" name="startDateTime" type="datetime-local" class="form-control" required>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100">Add Slot</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
 
-                        <div id="bulk-create" class="card border-0 mb-4">
-                            <div class="card-header bg-white border-bottom py-3">
-                                <h3 class="h6 mb-0 fw-bold">Bulk Create Slots</h3>
-                            </div>
-                            <div class="card-body">
-                                <form method="post" action="/stylist/availability/bulk" class="row g-3">
-                                    <% if (csrfToken != null) { %>
-                                        <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
-                                    <% } %>
-                                    <div class="col-md-6">
-                                        <label for="bulkStartDate" class="form-label small text-muted">Start Date</label>
-                                        <input id="bulkStartDate" name="startDate" type="date" class="form-control" required>
+                    <div id="bulk-create" class="card border-0 mb-4">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h3 class="h6 mb-0 fw-bold">Bulk Create Slots</h3>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" action="/stylist/availability/bulk" class="row g-3">
+                                <% if (csrfToken != null) { %>
+                                    <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                <% } %>
+                                <div class="col-md-6">
+                                    <label for="bulkStartDate" class="form-label small text-muted">Start Date</label>
+                                    <input id="bulkStartDate" name="startDate" type="date" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="bulkEndDate" class="form-label small text-muted">End Date</label>
+                                    <input id="bulkEndDate" name="endDate" type="date" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="bulkDayStartTime" class="form-label small text-muted">Daily Start Time</label>
+                                    <input id="bulkDayStartTime" name="dayStartTime" type="time" class="form-control" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="bulkDayEndTime" class="form-label small text-muted">Daily End Time</label>
+                                    <input id="bulkDayEndTime" name="dayEndTime" type="time" class="form-control" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small text-muted d-block mb-2">Active Weekdays</label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <% String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+                                           for (String day : days) { %>
+                                            <div class="flex-grow-1 flex-sm-grow-0">
+                                                <input type="checkbox" class="btn-check" id="wd<%= day.substring(0,3) %>" name="weekdays" value="<%= day.toUpperCase() %>" autocomplete="off">
+                                                <label class="btn btn-outline-primary btn-sm w-100" for="wd<%= day.substring(0,3) %>"><%= day.substring(0,3) %></label>
+                                            </div>
+                                        <% } %>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="bulkEndDate" class="form-label small text-muted">End Date</label>
-                                        <input id="bulkEndDate" name="endDate" type="date" class="form-control" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="bulkDayStartTime" class="form-label small text-muted">Daily Start Time</label>
-                                        <input id="bulkDayStartTime" name="dayStartTime" type="time" class="form-control" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="bulkDayEndTime" class="form-label small text-muted">Daily End Time</label>
-                                        <input id="bulkDayEndTime" name="dayEndTime" type="time" class="form-control" required>
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="form-label small text-muted d-block mb-2">Active Weekdays</label>
-                                        <div class="d-flex flex-wrap gap-2">
-                                            <% String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
-                                               for (String day : days) { %>
-                                                <div class="flex-grow-1 flex-sm-grow-0">
-                                                    <input type="checkbox" class="btn-check" id="wd<%= day.substring(0,3) %>" name="weekdays" value="<%= day.toUpperCase() %>" autocomplete="off">
-                                                    <label class="btn btn-outline-primary btn-sm w-100" for="wd<%= day.substring(0,3) %>"><%= day.substring(0,3) %></label>
-                                                </div>
-                                            <% } %>
-                                        </div>
-                                    </div>
-                                    <div class="col-12 text-end mt-4">
-                                        <button type="submit" class="btn btn-primary px-4">Generate Slots</button>
-                                    </div>
-                                </form>
-                            </div>
+                                </div>
+                                <div class="col-12 text-end mt-4">
+                                    <button type="submit" class="btn btn-primary px-4">Generate Slots</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
 
@@ -411,7 +430,6 @@
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th class="ps-4">Slot ID</th>
                                             <th>Start</th>
                                             <th>End</th>
                                             <th>Status</th>
@@ -425,7 +443,6 @@
                                                 for (AvailabilitySlot slot : slots) {
                                         %>
                                             <tr>
-                                                <td class="ps-4"><strong>#<%= slot.getId() %></strong></td>
                                                 <td><div class="small fw-medium"><%= slot.getStartDateTime().format(slotDateFormatter) %></div></td>
                                                 <td><div class="small text-muted"><%= slot.getEndDateTime().format(slotDateFormatter) %></div></td>
                                                 <td>
@@ -450,7 +467,7 @@
                                                             <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Slot</button>
                                                         </form>
                                                     <% } else { %>
-                                                        <span class="text-muted small">—</span>
+                                                        <span class="text-muted small">-</span>
                                                     <% } %>
                                                 </td>
                                             </tr>
@@ -528,7 +545,6 @@
                 });
             });
 
-            // Sub-tab logic for Appointments
             const subTabButtons = document.querySelectorAll('button[data-subtab]');
             const subTabContents = document.querySelectorAll('div[data-subtab-content]');
 
@@ -558,7 +574,6 @@
                 });
             });
 
-            // Availability Form Logic
             const startInput = document.getElementById('startDateTime');
             const bulkStartDateInput = document.getElementById('bulkStartDate');
             const bulkEndDateInput = document.getElementById('bulkEndDate');

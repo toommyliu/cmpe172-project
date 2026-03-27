@@ -373,7 +373,7 @@
                                     </td>
                                     <td>
                                         <div class="text-secondary small text-truncate" style="max-width: 250px;">
-                                            <%= s.getDescription() != null && !s.getDescription().isBlank() ? s.getDescription() : "—" %>
+                                            <%= s.getDescription() != null && !s.getDescription().isBlank() ? s.getDescription() : "-" %>
                                         </div>
                                     </td>
                                     <td><span class="fw-medium text-dark">$<%= String.format("%.2f", s.getPrice()) %></span></td>
@@ -504,7 +504,7 @@
                                             </select>
                                         </form>
                                         <% } else { %>
-                                        <span class="text-muted small">—</span>
+                                        <span class="text-muted small">-</span>
                                         <% } %>
                                     </td>
                                     <td class="pe-4 text-end">
@@ -535,7 +535,7 @@
                                             </button>
                                         </form>
                                         <% } else { %>
-                                        <span class="text-muted small">—</span>
+                                        <span class="text-muted small">-</span>
                                         <% } %>
                                     </td>
                                 </tr>
