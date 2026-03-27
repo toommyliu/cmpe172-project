@@ -38,7 +38,7 @@ public class SecurityConfig {
                         .requestMatchers("/css/**", "/js/**", "/", "/login", "/register").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/appointments").authenticated()
-                        .requestMatchers("/appointments/*/cancel").hasAnyRole("CUSTOMER", "ADMIN")
+                        .requestMatchers("/appointments/*/cancel").hasAnyRole("CUSTOMER", "ADMIN", "STYLIST")
                         .requestMatchers("/appointments/**").hasRole("ADMIN")
                         .requestMatchers("/stylist/**").hasAnyRole("STYLIST", "ADMIN")
                         .requestMatchers("/customer/**", "/available-slots", "/book-appointment", "/booking-confirmation")

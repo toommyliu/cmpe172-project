@@ -99,7 +99,7 @@
                                                     </td>
                                                     <td class="text-end">
                                                         <button class="btn btn-sm btn-outline-danger" onclick="cancelAppointment(<%= apt.getId() %>)">
-                                                            <i class="bi bi-x-circle me-1"></i>Cancel
+                                                           Cancel
                                                         </button>
                                                     </td>
                                                 </tr>

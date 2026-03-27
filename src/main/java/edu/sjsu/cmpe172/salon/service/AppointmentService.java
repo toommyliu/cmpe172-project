@@ -104,9 +104,9 @@ public class AppointmentService {
         return repository.deleteById(id);
     }
 
-    public boolean cancelAppointment(int id, int customerUserId) {
+    public boolean cancelAppointment(int id, int userId) {
         return repository.findById(id).map(appointment -> {
-            if (appointment.getCustomerUserId() != customerUserId) {
+            if (appointment.getCustomerUserId() != userId && appointment.getStylistUserId() != userId) {
                 throw new IllegalArgumentException("You are not authorized to cancel this appointment.");
             }
             if (appointment.getStatus() == AppointmentStatus.Canceled) {

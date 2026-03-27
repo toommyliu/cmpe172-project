@@ -2,6 +2,7 @@
 <%@ page import="edu.sjsu.cmpe172.salon.dto.AppointmentDto" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.AvailabilitySlot" %>
 <%@ page import="edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus" %>
+<%@ page import="edu.sjsu.cmpe172.salon.enums.AppointmentStatus" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
@@ -218,6 +219,8 @@
                                                 <th>Service</th>
                                                 <th>Customer</th>
                                                 <th>Slot</th>
+                                                <th>Status</th>
+                                                <th class="text-end">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -246,6 +249,31 @@
                                                         <%= apt.getSlotEndDateTime().format(timeOnlyFormatter) %>
                                                     <% } else { %>
                                                         Slot <%= apt.getAvailabilitySlotId() %>
+                                                    <% } %>
+                                                </td>
+                                                <td>
+                                                    <%
+                                                        String aptBadgeClass = "bg-secondary";
+                                                        if (apt.getStatus() == AppointmentStatus.Booked) {
+                                                            aptBadgeClass = "bg-primary";
+                                                        } else if (apt.getStatus() == AppointmentStatus.Complete) {
+                                                            aptBadgeClass = "bg-success";
+                                                        } else if (apt.getStatus() == AppointmentStatus.Canceled) {
+                                                            aptBadgeClass = "bg-danger";
+                                                        }
+                                                    %>
+                                                    <span class="badge <%= aptBadgeClass %>"><%= apt.getStatus().toString() %></span>
+                                                </td>
+                                                <td class="text-end">
+                                                    <% if (apt.getStatus() == AppointmentStatus.Booked) { %>
+                                                        <form method="post" action="/appointments/<%= apt.getId() %>/cancel" style="display:inline;">
+                                                            <% if (csrfToken != null) { %>
+                                                                <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                                            <% } %>
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this appointment?')">Cancel</button>
+                                                        </form>
+                                                    <% } else { %>
+                                                        <span class="text-muted small">-</span>
                                                     <% } %>
                                                 </td>
                                             </tr>
