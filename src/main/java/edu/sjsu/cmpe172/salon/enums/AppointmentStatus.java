@@ -3,9 +3,8 @@ package edu.sjsu.cmpe172.salon.enums;
 public enum AppointmentStatus {
     Unknown(0),
     Booked(1),
-    Pending(2),
-    Complete(3),
-    Canceled(100);
+    Complete(2),
+    Canceled(3);
 
     private int value;
 
@@ -20,9 +19,8 @@ public enum AppointmentStatus {
     public String toString() {
         return switch (this.value) {
             case 1 -> "Booked";
-            case 2 -> "Pending";
-            case 3 -> "Completed";
-            case 100 -> "Canceled";
+            case 2 -> "Completed";
+            case 3 -> "Canceled";
             default -> "Unknown";
         };
     }
@@ -30,9 +28,8 @@ public enum AppointmentStatus {
     public static AppointmentStatus fromValue(int value) {
         return switch (value) {
             case 1 -> Booked;
-            case 2 -> Pending;
-            case 3 -> Complete;
-            case 100 -> Canceled;
+            case 2 -> Complete;
+            case 3 -> Canceled;
             default -> Unknown;
         };
     }

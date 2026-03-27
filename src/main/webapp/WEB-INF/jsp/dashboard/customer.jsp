@@ -65,7 +65,7 @@
                                                 
                                                 if (appointments != null) {
                                                     for (AppointmentDto apt : appointments) {
-                                                        if (apt.getStatus() == AppointmentStatus.Booked || apt.getStatus() == AppointmentStatus.Pending) {
+                                                        if (apt.getStatus() == AppointmentStatus.Booked) {
                                                             upcoming.add(apt);
                                                         } else {
                                                             history.add(apt);
