@@ -33,30 +33,77 @@
         pointer-events: none;
     }
 
-    .hidden {
-        display: none !important;
-    }
-
     [data-bs-spy="scroll"] {
         position: relative;
     }
 
     .card {
-        scroll-margin-top: 120px;
+        scroll-margin-top: 2rem;
+    }
+
+    .dashboard-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 56px);
+        overflow: hidden;
+        background-color: var(--bs-body-bg);
+    }
+
+    .dashboard-header {
+        flex-shrink: 0;
+        background-color: var(--bs-body-bg);
+    }
+
+    .dashboard-content {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding-bottom: 3rem;
+        background-color: var(--bs-tertiary-bg);
+    }
+
+    .tabs-wrapper {
+        background-color: var(--bs-tertiary-bg) !important;
+        padding-top: 1rem;
+    }
+
+    .tabs-inner-container {
+        border-bottom: 1px solid var(--bs-border-color);
     }
 </style>
 
-<body data-bs-spy="scroll" data-bs-target="#provider-scrollspy" data-bs-offset="150">
+<body class="bg-light">
     <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
-    <div class="page-header">
-        <div class="container page-header__container">
-            <h1 class="h2 page-header__title">Admin Dashboard</h1>
-            <p class="page-header__subtitle text-muted">Manage the business, services, and users.</p>
-        </div>
-    </div>
+    <div class="dashboard-wrapper">
+        <header class="dashboard-header">
+            <div class="page-header mb-0">
+                <div class="container page-header__container">
+                    <h1 class="h2 page-header__title">Admin Dashboard</h1>
+                    <p class="page-header__subtitle text-muted mb-3">Manage the business, services, and users.</p>
+                </div>
+            </div>
 
-    <main class="container pb-5">
+            <div class="tabs-wrapper">
+                <div class="container">
+                    <div class="tabs-inner-container">
+                        <ul class="nav nav-tabs border-bottom-0">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#" data-tab="provider">Provider</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-tab="services">Services</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-tab="users">Users</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-content" id="dashboard-scroll-area" data-bs-spy="scroll" data-bs-target="#provider-scrollspy" data-bs-offset="100">
+            <div class="container py-4">
         <%
             CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
             String successMessage = (String) request.getAttribute("successMessage");
@@ -89,26 +136,13 @@
             }
         %>
 
-        <div class="mb-4">
-            <ul class="nav nav-tabs border-bottom-0">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#" data-tab="provider">Provider</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" data-tab="services">Services</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#" data-tab="users">Users</a>
-                </li>
-            </ul>
-        </div>
 
         <div id="provider-tab-content" data-tab="provider">
             <div class="row g-4">
                 <div class="col-lg-3 d-none d-lg-block">
-                    <div class="sticky-top" style="top: 2rem; z-index: 10;">
+                    <div class="sticky-top" style="top: 1rem; z-index: 10;">
                         <nav id="provider-scrollspy" class="nav nav-pills flex-column">
-                            <a class="nav-link" href="#provider-info">General</a>
+                            <a class="nav-link" href="#provider-info">Provider Information</a>
                             <span class="nav-link disabled text-muted small mt-2 ps-3">Availability</span>
                             <a class="nav-link ms-3 my-1" href="#weekly-hours">Weekly Hours</a>
                             <a class="nav-link ms-3 my-1" href="#date-overrides">Date Overrides</a>
@@ -446,7 +480,9 @@
                 </div>
             </div>
         </div>
-    </main>
+            </div>
+        </main>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -469,10 +505,14 @@
                         }
                     });
 
+                    // Scroll back to top when switching tabs
+                    document.getElementById('dashboard-scroll-area').scrollTop = 0;
+
                     // Refresh Scrollspy if provider is active
                     if (targetTab === 'provider') {
                         setTimeout(() => {
-                            const scrollspyInstance = bootstrap.ScrollSpy.getInstance(document.body);
+                            const scrollArea = document.getElementById('dashboard-scroll-area');
+                            const scrollspyInstance = bootstrap.ScrollSpy.getInstance(scrollArea);
                             if (scrollspyInstance) {
                                 scrollspyInstance.refresh();
                             }
