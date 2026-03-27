@@ -71,7 +71,7 @@
     }
 </style>
 
-<body class="bg-light">
+<body>
     <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
     <div class="dashboard-wrapper">
