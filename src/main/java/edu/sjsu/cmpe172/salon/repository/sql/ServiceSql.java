@@ -6,7 +6,7 @@ public final class ServiceSql {
 
     public static final String CREATE_TABLE = """
             CREATE TABLE IF NOT EXISTS services (
-                id INT PRIMARY KEY,
+                id INT PRIMARY KEY AUTO_INCREMENT,
                 code VARCHAR(50) NOT NULL UNIQUE,
                 name VARCHAR(120) NOT NULL,
                 description VARCHAR(255) NULL,
@@ -33,6 +33,17 @@ public final class ServiceSql {
             WHERE id = ?
             """;
 
+    public static final String INSERT_SERVICE = """
+            INSERT INTO services (code, name, description, price, duration_minutes)
+            VALUES (?, ?, ?, ?, ?)
+            """;
+
+    public static final String UPDATE_SERVICE = """
+            UPDATE services
+            SET code = ?, name = ?, description = ?, price = ?, duration_minutes = ?
+            WHERE id = ?
+            """;
+
     public static final String UPSERT_SERVICE = """
             INSERT INTO services (id, code, name, description, price, duration_minutes)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -47,5 +58,10 @@ public final class ServiceSql {
     public static final String COUNT_ALL = """
             SELECT COUNT(*)
             FROM services
+            """;
+
+    public static final String DELETE_BY_ID = """
+            DELETE FROM services
+            WHERE id = ?
             """;
 }

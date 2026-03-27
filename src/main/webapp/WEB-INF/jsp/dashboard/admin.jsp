@@ -117,7 +117,7 @@
             List<ProviderDateOverride> dateOverrides = (List<ProviderDateOverride>) request.getAttribute("dateOverrides");
             DateTimeFormatter inputTimeFormatter = DateTimeFormatter.ofPattern("HH:mm");
             DateTimeFormatter displayTimeFormatter = DateTimeFormatter.ofPattern("h:mm a");
-            
+
             if (successMessage != null) {
         %>
         <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
@@ -337,10 +337,79 @@
         <div id="services-tab-content" class="hidden" data-tab="services">
             <div class="card border-0">
                 <div class="card-header bg-white border-bottom py-3">
-                    <h2 class="h5 mb-0 fw-bold">Service Management</h2>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h2 class="h5 mb-0 fw-bold">Service Management</h2>
+                        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#serviceModal" onclick="resetServiceModal()">
+                            Add New Service
+                        </button>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted">Service management features coming soon...</p>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">Code</th>
+                                    <th>Name</th>
+                                    <th>Description</th>
+                                    <th>Price</th>
+                                    <th>Duration</th>
+                                    <th class="pe-4 text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <%
+                                    List<Service> adminServices = (List<Service>) request.getAttribute("services");
+                                    if (adminServices != null && !adminServices.isEmpty()) {
+                                        for (Service s : adminServices) {
+                                            String desc = s.getDescription() == null ? "" : s.getDescription();
+                                %>
+                                <tr>
+                                    <td class="ps-4">
+                                        <span class="badge bg-light text-dark font-monospace"><%= s.getCode() %></span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold"><%= s.getName() %></div>
+                                    </td>
+                                    <td>
+                                        <div class="text-secondary small text-truncate" style="max-width: 250px;">
+                                            <%= s.getDescription() != null && !s.getDescription().isBlank() ? s.getDescription() : "—" %>
+                                        </div>
+                                    </td>
+                                    <td><span class="fw-medium text-dark">$<%= String.format("%.2f", s.getPrice()) %></span></td>
+                                    <td><span class="text-secondary small"><%= s.getDurationMinutes() %> min</span></td>
+                                    <td class="pe-4 text-end">
+                                        <button class="btn btn-sm btn-outline-primary me-1"
+                                                data-service-id="<%= s.getId() %>"
+                                                data-service-code="<%= s.getCode() %>"
+                                                data-service-name="<%= s.getName() %>"
+                                                data-service-description="<%= desc %>"
+                                                data-service-price="<%= s.getPrice() %>"
+                                                data-service-duration="<%= s.getDurationMinutes() %>"
+                                                onclick="prepareEditService(this)">
+                                            Edit
+                                        </button>
+                                        <form method="post" action="/admin/services/<%= s.getId() %>/delete" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this service? This may affect stylists assigned to it.')">
+                                            <% if (csrfToken != null) { %>
+                                            <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                            <% } %>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <%
+                                        }
+                                    } else {
+                                %>
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <p class="text-muted mb-0">No services have been created yet.</p>
+                                    </td>
+                                </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -484,40 +553,108 @@
         </main>
     </div>
 
+    </div>
+
+    <div class="modal fade" id="serviceModal" tabindex="-1" aria-labelledby="serviceModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <form method="post" action="/admin/services">
+                    <div class="modal-header bg-light border-bottom py-3">
+                        <h5 class="modal-title fw-bold" id="serviceModalLabel">Add New Service</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <% if (csrfToken != null) { %>
+                        <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                        <% } %>
+                        <input type="hidden" name="id" id="service-id">
+                        <div class="mb-3">
+                            <label for="service-code" class="form-label small text-muted mb-1">Service Code</label>
+                            <input type="text" class="form-control" id="service-code" name="code" required placeholder="e.g., haircut">
+                        </div>
+                        <div class="mb-3">
+                            <label for="service-name" class="form-label small text-muted mb-1">Display Name</label>
+                            <input type="text" class="form-control" id="service-name" name="name" required placeholder="e.g., Haircut">
+                        </div>
+                        <div class="mb-3">
+                            <label for="service-description" class="form-label small text-muted mb-1">Description</label>
+                            <textarea class="form-control" id="service-description" name="description" rows="3" placeholder="Explain what this service includes..."></textarea>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="service-price" class="form-label small text-muted mb-1">Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">$</span>
+                                    <input type="number" step="0.01" class="form-control ps-1" id="service-price" name="price" required min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="service-duration" class="form-label small text-muted mb-1">Duration</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control border-end-0" id="service-duration" name="durationMinutes" required min="1">
+                                    <span class="input-group-text bg-light ps-1">min</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-top py-3">
+                        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary px-4 fw-bold">Save Service</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const tabLinks = document.querySelectorAll('ul.nav-tabs .nav-link');
             const tabContents = document.querySelectorAll('div[data-tab]');
 
+            function switchTab(targetTab) {
+                tabLinks.forEach(l => {
+                    if (l.getAttribute('data-tab') === targetTab) {
+                        l.classList.add('active');
+                    } else {
+                        l.classList.remove('active');
+                    }
+                });
+
+                tabContents.forEach(content => {
+                    if (content.getAttribute('data-tab') === targetTab) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+
+                // Update URL without reloading
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', targetTab);
+                window.history.pushState({path: url.href}, '', url.href);
+
+                // Refresh Scrollspy if provider is active
+                if (targetTab === 'provider') {
+                    setTimeout(() => {
+                        const scrollArea = document.getElementById('dashboard-scroll-area');
+                        const scrollspyInstance = bootstrap.ScrollSpy.getInstance(scrollArea);
+                        if (scrollspyInstance) {
+                            scrollspyInstance.refresh();
+                        }
+                    }, 100);
+                }
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialTab = urlParams.get('tab') || 'provider';
+            switchTab(initialTab);
+
             tabLinks.forEach(link => {
                 link.addEventListener('click', (ev) => {
                     ev.preventDefault();
                     const targetTab = link.getAttribute('data-tab');
-
-                    tabLinks.forEach(l => l.classList.remove('active'));
-                    link.classList.add('active');
-
-                    tabContents.forEach(content => {
-                        if (content.getAttribute('data-tab') === targetTab) {
-                            content.classList.remove('hidden');
-                        } else {
-                            content.classList.add('hidden');
-                        }
-                    });
-
-                    // Scroll back to top when switching tabs
+                    switchTab(targetTab);
                     document.getElementById('dashboard-scroll-area').scrollTop = 0;
-
-                    // Refresh Scrollspy if provider is active
-                    if (targetTab === 'provider') {
-                        setTimeout(() => {
-                            const scrollArea = document.getElementById('dashboard-scroll-area');
-                            const scrollspyInstance = bootstrap.ScrollSpy.getInstance(scrollArea);
-                            if (scrollspyInstance) {
-                                scrollspyInstance.refresh();
-                            }
-                        }, 100);
-                    }
                 });
             });
         });
@@ -583,6 +720,30 @@
             searchInput.addEventListener('input', filterTable);
             roleFilter.addEventListener('change', filterTable);
         });
+
+        function resetServiceModal() {
+            document.getElementById('serviceModalLabel').textContent = 'Add New Service';
+            document.getElementById('service-id').value = '';
+            document.getElementById('service-code').value = '';
+            document.getElementById('service-name').value = '';
+            document.getElementById('service-description').value = '';
+            document.getElementById('service-price').value = '';
+            document.getElementById('service-duration').value = '';
+        }
+
+        function prepareEditService(btn) {
+            document.getElementById('serviceModalLabel').textContent = 'Edit Service';
+            document.getElementById('service-id').value = btn.getAttribute('data-service-id');
+            document.getElementById('service-code').value = btn.getAttribute('data-service-code');
+            document.getElementById('service-name').value = btn.getAttribute('data-service-name');
+            document.getElementById('service-description').value = btn.getAttribute('data-service-description') || '';
+            document.getElementById('service-price').value = btn.getAttribute('data-service-price');
+            document.getElementById('service-duration').value = btn.getAttribute('data-service-duration');
+
+            const modalElement = document.getElementById('serviceModal');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            modal.show();
+        }
     </script>
 </body>
 </html>

@@ -1,9 +1,10 @@
 package edu.sjsu.cmpe172.salon.controller;
 
 import edu.sjsu.cmpe172.salon.model.Provider;
+import edu.sjsu.cmpe172.salon.model.Service;
 import edu.sjsu.cmpe172.salon.repository.ProviderRepository;
-import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
 import edu.sjsu.cmpe172.salon.service.ProviderScheduleService;
+import edu.sjsu.cmpe172.salon.service.ServiceService;
 import edu.sjsu.cmpe172.salon.service.UserService;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,25 +26,63 @@ import jakarta.servlet.http.HttpServletRequest;
 @Controller
 public class AdminController {
     private final UserService userService;
-    private final ServiceRepository serviceRepository;
+    private final ServiceService serviceService;
     private final ProviderRepository providerRepository;
     private final ProviderScheduleService providerScheduleService;
 
     public AdminController(UserService userService,
-                           ServiceRepository serviceRepository,
+                           ServiceService serviceService,
                            ProviderRepository providerRepository,
                            ProviderScheduleService providerScheduleService) {
         this.userService = userService;
-        this.serviceRepository = serviceRepository;
+        this.serviceService = serviceService;
         this.providerRepository = providerRepository;
         this.providerScheduleService = providerScheduleService;
+    }
+
+    @PostMapping("/admin/services")
+    public String saveService(@RequestParam(required = false) Integer id,
+                              @RequestParam String code,
+                              @RequestParam String name,
+                              @RequestParam(required = false) String description,
+                              @RequestParam double price,
+                              @RequestParam int durationMinutes,
+                              RedirectAttributes redirectAttributes) {
+        try {
+            Service service = new Service();
+            if (id != null) {
+                service.setId(id);
+            }
+            service.setCode(code.trim());
+            service.setName(name.trim());
+            service.setDescription(description != null ? description.trim() : null);
+            service.setPrice(price);
+            service.setDurationMinutes(durationMinutes);
+
+            serviceService.save(service);
+            redirectAttributes.addFlashAttribute("successMessage", "Service saved successfully.");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to save service: " + ex.getMessage());
+        }
+        return "redirect:/dashboard?tab=services";
+    }
+
+    @PostMapping("/admin/services/{id}/delete")
+    public String deleteService(@PathVariable int id, RedirectAttributes redirectAttributes) {
+        try {
+            serviceService.deleteById(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Service deleted successfully.");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Failed to delete service: " + ex.getMessage());
+        }
+        return "redirect:/dashboard?tab=services";
     }
 
     @PostMapping("/admin/users/assign-stylist")
     public String assignStylistRole(@RequestParam int userId,
                                     @RequestParam int serviceId,
                                     RedirectAttributes redirectAttributes) {
-        if (!serviceRepository.existsById(serviceId)) {
+        if (!serviceService.findById(serviceId).isPresent()) {
             redirectAttributes.addFlashAttribute("errorMessage", "A valid service is required.");
             return "redirect:/dashboard";
         }
@@ -54,7 +93,7 @@ public class AdminController {
                 redirectAttributes.addFlashAttribute("errorMessage", "User not found.");
                 return "redirect:/dashboard";
             }
-            String serviceName = serviceRepository.findById(serviceId)
+            String serviceName = serviceService.findById(serviceId)
                     .map(service -> service.getName())
                     .orElse("Unknown");
             redirectAttributes.addFlashAttribute(
@@ -64,7 +103,7 @@ public class AdminController {
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
         }
-        return "redirect:/dashboard";
+        return "redirect:/dashboard?tab=users";
     }
 
     @PostMapping("/admin/provider")

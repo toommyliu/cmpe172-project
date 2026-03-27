@@ -11,4 +11,8 @@ public interface ServiceRepository {
     Optional<Service> findById(int serviceId);
 
     boolean existsById(int serviceId);
+    
+    void save(Service service);
+
+    void deleteById(int serviceId);
 }
