@@ -1,9 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="edu.sjsu.cmpe172.salon.dto.AppointmentDto" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Stylist" %>
+<%@ page import="edu.sjsu.cmpe172.salon.dto.StylistDto" %>
 <%@ page import="edu.sjsu.cmpe172.salon.model.Service" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
+<%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
 <!DOCTYPE html>
 <html lang="en">
 <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
@@ -121,8 +123,7 @@
 
                             <form id="bookingForm" method="post" action="/appointments">
                                 <%
-                                    org.springframework.security.web.csrf.CsrfToken csrfToken =
-                                            (org.springframework.security.web.csrf.CsrfToken) request.getAttribute("_csrf");
+                                    CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
                                     if (csrfToken != null) {
                                 %>
                                     <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
@@ -153,9 +154,9 @@
                                             <select class="form-select form-select-lg" id="stylist" name="stylistUserId" required>
                                                 <option selected disabled value="">Choose a stylist...</option>
                                                 <%
-                                                    List<Stylist> stylists = (List<Stylist>) request.getAttribute("stylists");
+                                                    List<StylistDto> stylists = (List<StylistDto>) request.getAttribute("stylists");
                                                     if (stylists != null) {
-                                                        for (Stylist s : stylists) {
+                                                        for (StylistDto s : stylists) {
                                                 %>
                                                     <option value="<%= s.getId() %>" data-service-id="<%= s.getServiceId() %>"><%= s.getFirstName() %> <%= s.getLastName() %> - <%= s.getServiceName() %></option>
                                                 <%
@@ -209,135 +210,135 @@
             if (url.searchParams?.get('new') === 'true') {
                 showBookingFlow();
             }
-
-            const slotContainer = document.getElementById('slotContainer');
-            const slotEmptyState = document.getElementById('slotEmptyState');
-            const stylistSelect = document.getElementById('stylist');
-            const serviceSelect = document.getElementById('service');
-            const nextButton = document.getElementById('nextToStep2');
-            const confirmButton = document.getElementById('confirmBooking');
-
-            function showBookingFlow() {
-                document.getElementById('dashboardView').style.display = 'none';
-                document.getElementById('bookingView').style.display = 'block';
-                goToStep(1);
-            }
-
-            function cancelBooking() {
-                document.getElementById('bookingView').style.display = 'none';
-                document.getElementById('dashboardView').style.display = 'block';
-                resetForm();
-            }
-
-            function goToStep(stepNum) {
-                document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
-                document.getElementById('step' + stepNum).classList.add('active');
-
-                const indicator = document.getElementById('stepIndicator');
-                if (stepNum === 1) {
-                    indicator.innerText = "Step 1: Choose your service and stylist";
-                } else {
-                    indicator.innerText = "Step 2: Choose an available time slot";
-                }
-            }
-
-            function selectSlot(slot, el) {
-                document.querySelectorAll('.booking__slot').forEach(s => s.classList.remove('booking__slot--selected'));
-                el.classList.add('booking__slot--selected');
-
-                document.getElementById('selectedSlotId').value = slot.id;
-                document.getElementById('selectedTimeSummary').innerText = slot.rangeLabel;
-                document.getElementById('selectedDurationSummary').innerText = 'Duration: ' + slot.durationMinutes + ' minutes';
-                confirmButton.disabled = false;
-            }
-
-            function resetForm() {
-                document.getElementById('bookingForm').reset();
-                nextButton.disabled = true;
-                resetSlotSelection();
-            }
-
-            function resetSlotSelection() {
-                document.querySelectorAll('.booking__slot').forEach(s => s.classList.remove('booking__slot--selected'));
-                confirmButton.disabled = true;
-                document.getElementById('selectedSlotId').value = '';
-                document.getElementById('selectedTimeSummary').innerText = 'Not selected';
-                document.getElementById('selectedDurationSummary').innerText = '';
-                if (slotContainer) {
-                    slotContainer.innerHTML = '';
-                }
-                if (slotEmptyState) {
-                    slotEmptyState.classList.add('d-none');
-                }
-            }
-
-            function validateStepOne() {
-                nextButton.disabled = !serviceSelect.value || !stylistSelect.value;
-            }
-
-            function loadAndShowSlots() {
-                const stylistId = stylistSelect.value;
-                if (!stylistId) {
-                    return;
-                }
-
-                const selectedStylistOption = stylistSelect.options[stylistSelect.selectedIndex];
-                const selectedServiceId = serviceSelect.value;
-                const selectedStylistService = selectedStylistOption.getAttribute('data-service-id');
-                if (selectedServiceId !== selectedStylistService) {
-                    alert('Please choose a stylist whose service matches your selection.');
-                    return;
-                }
-
-                const serviceId = serviceSelect.value;
-                fetch('/customer/stylists/' + stylistId + '/available-slots?serviceId=' + encodeURIComponent(serviceId))
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Failed to load available slots.');
-                        }
-                        return response.json();
-                    })
-                    .then(slots => {
-                        slotContainer.innerHTML = '';
-                        resetSlotSelection();
-
-                        if (!slots.length) {
-                            slotEmptyState.innerText = 'No available slots for this stylist right now.';
-                            slotEmptyState.classList.remove('d-none');
-                        } else {
-                            slotEmptyState.classList.add('d-none');
-                        }
-
-                        slots.forEach(slot => {
-                            const col = document.createElement('div');
-                            col.className = 'col-md-3 col-6';
-                            const button = document.createElement('button');
-                            button.type = 'button';
-                            button.className = 'booking__slot py-3 text-center rounded bg-light w-100';
-                            button.innerHTML = '<div class="fw-semibold">' + slot.startLabel + '</div>' +
-                                '<div class="small text-muted">Ends ' + slot.endLabel + ' (' + slot.durationMinutes + ' min)</div>';
-                            button.addEventListener('click', () => {
-                                selectSlot(slot, button);
-                            });
-                            col.appendChild(button);
-                            slotContainer.appendChild(col);
-                        });
-
-                        goToStep(2);
-                    })
-                    .catch(error => {
-                        slotContainer.innerHTML = '';
-                        slotEmptyState.classList.remove('d-none');
-                        slotEmptyState.innerText = error.message;
-                        goToStep(2);
-                    });
-            }
-
-            serviceSelect.addEventListener('change', validateStepOne);
-            stylistSelect.addEventListener('change', validateStepOne);
-            serviceSelect.addEventListener('change', resetSlotSelection);
-            stylistSelect.addEventListener('change', resetSlotSelection);
         });
+
+        const slotContainer = document.getElementById('slotContainer');
+        const slotEmptyState = document.getElementById('slotEmptyState');
+        const stylistSelect = document.getElementById('stylist');
+        const serviceSelect = document.getElementById('service');
+        const nextButton = document.getElementById('nextToStep2');
+        const confirmButton = document.getElementById('confirmBooking');
+
+        function showBookingFlow() {
+            document.getElementById('dashboardView').style.display = 'none';
+            document.getElementById('bookingView').style.display = 'block';
+            goToStep(1);
+        }
+
+        function cancelBooking() {
+            document.getElementById('bookingView').style.display = 'none';
+            document.getElementById('dashboardView').style.display = 'block';
+            resetForm();
+        }
+
+        function goToStep(stepNum) {
+            document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step' + stepNum).classList.add('active');
+
+            const indicator = document.getElementById('stepIndicator');
+            if (stepNum === 1) {
+                indicator.innerText = "Step 1: Choose your service and stylist";
+            } else {
+                indicator.innerText = "Step 2: Choose an available time slot";
+            }
+        }
+
+        function selectSlot(slot, el) {
+            document.querySelectorAll('.booking__slot').forEach(s => s.classList.remove('booking__slot--selected'));
+            el.classList.add('booking__slot--selected');
+
+            document.getElementById('selectedSlotId').value = slot.id;
+            document.getElementById('selectedTimeSummary').innerText = slot.rangeLabel;
+            document.getElementById('selectedDurationSummary').innerText = 'Duration: ' + slot.durationMinutes + ' minutes';
+            confirmButton.disabled = false;
+        }
+
+        function resetForm() {
+            document.getElementById('bookingForm').reset();
+            nextButton.disabled = true;
+            resetSlotSelection();
+        }
+
+        function resetSlotSelection() {
+            document.querySelectorAll('.booking__slot').forEach(s => s.classList.remove('booking__slot--selected'));
+            confirmButton.disabled = true;
+            document.getElementById('selectedSlotId').value = '';
+            document.getElementById('selectedTimeSummary').innerText = 'Not selected';
+            document.getElementById('selectedDurationSummary').innerText = '';
+            if (slotContainer) {
+                slotContainer.innerHTML = '';
+            }
+            if (slotEmptyState) {
+                slotEmptyState.classList.add('d-none');
+            }
+        }
+
+        function validateStepOne() {
+            nextButton.disabled = !serviceSelect.value || !stylistSelect.value;
+        }
+
+        function loadAndShowSlots() {
+            const stylistId = stylistSelect.value;
+            if (!stylistId) {
+                return;
+            }
+
+            const selectedStylistOption = stylistSelect.options[stylistSelect.selectedIndex];
+            const selectedServiceId = serviceSelect.value;
+            const selectedStylistService = selectedStylistOption.getAttribute('data-service-id');
+            if (selectedServiceId !== selectedStylistService) {
+                alert('Please choose a stylist whose service matches your selection.');
+                return;
+            }
+
+            const serviceId = serviceSelect.value;
+            fetch('/customer/stylists/' + stylistId + '/available-slots?serviceId=' + encodeURIComponent(serviceId))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to load available slots.');
+                    }
+                    return response.json();
+                })
+                .then(slots => {
+                    slotContainer.innerHTML = '';
+                    resetSlotSelection();
+
+                    if (!slots.length) {
+                        slotEmptyState.innerText = 'No available slots for this stylist right now.';
+                        slotEmptyState.classList.remove('d-none');
+                    } else {
+                        slotEmptyState.classList.add('d-none');
+                    }
+
+                    slots.forEach(slot => {
+                        const col = document.createElement('div');
+                        col.className = 'col-md-3 col-6';
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = 'booking__slot py-3 text-center rounded bg-light w-100';
+                        button.innerHTML = '<div class="fw-semibold">' + slot.startLabel + '</div>' +
+                            '<div class="small text-muted">Ends ' + slot.endLabel + ' (' + slot.durationMinutes + ' min)</div>';
+                        button.addEventListener('click', () => {
+                            selectSlot(slot, button);
+                        });
+                        col.appendChild(button);
+                        slotContainer.appendChild(col);
+                    });
+
+                    goToStep(2);
+                })
+                .catch(error => {
+                    slotContainer.innerHTML = '';
+                    slotEmptyState.classList.remove('d-none');
+                    slotEmptyState.innerText = error.message;
+                    goToStep(2);
+                });
+        }
+
+        serviceSelect.addEventListener('change', validateStepOne);
+        stylistSelect.addEventListener('change', validateStepOne);
+        serviceSelect.addEventListener('change', resetSlotSelection);
+        stylistSelect.addEventListener('change', resetSlotSelection);
     </script>
 </body>
 </html>
