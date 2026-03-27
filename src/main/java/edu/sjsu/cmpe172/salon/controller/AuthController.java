@@ -1,5 +1,7 @@
 package edu.sjsu.cmpe172.salon.controller;
 
+import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
+import edu.sjsu.cmpe172.salon.enums.AppointmentStatus;
 import edu.sjsu.cmpe172.salon.model.Customer;
 import edu.sjsu.cmpe172.salon.model.Provider;
 import edu.sjsu.cmpe172.salon.model.Stylist;
@@ -17,6 +19,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Controller
 public class AuthController {
@@ -105,8 +110,17 @@ public class AuthController {
                 yield "dashboard/admin";
             }
             case Stylist -> {
-                model.addAttribute("appointments", appointmentService.getAppointmentViewsForStylist(principal.getUserId()));
+                List<AppointmentDto> appointments = appointmentService.getAppointmentViewsForStylist(principal.getUserId());
+                model.addAttribute("appointments", appointments);
                 model.addAttribute("availabilitySlots", availabilitySlotService.getSlotsForStylist(principal.getUserId()));
+
+                LocalDate today = LocalDate.now();
+                long upcomingTodayCount = appointments.stream()
+                        .filter(a -> a.getStatus() == AppointmentStatus.Booked)
+                        .filter(a -> a.getSlotStartDateTime() != null && a.getSlotStartDateTime().toLocalDate().equals(today))
+                        .count();
+                model.addAttribute("upcomingTodayCount", upcomingTodayCount);
+
                 if (principal.getUser() instanceof Stylist stylist) {
                     serviceRepository.findById(stylist.getServiceId()).ifPresent(service -> {
                         model.addAttribute("stylistServiceName", service.getName());

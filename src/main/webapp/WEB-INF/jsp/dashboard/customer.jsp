@@ -227,7 +227,7 @@
                                         %>
                                             <tr>
                                                 <td class="ps-4"><strong>#<%= apt.getId() %></strong></td>
-                                                <td><span class="badge bg-light text-dark border px-2"><%= serviceName %></span></td>
+                                                <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
                                                 <td><div class="fw-medium"><%= apt.getStylistName() %></div></td>
                                                 <td><div class="small text-muted"><%= apt.getSlotStartDateTime().format(slotFormatter) %></div></td>
                                                 <td class="pe-4 text-end">

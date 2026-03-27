@@ -77,7 +77,18 @@
         <header class="dashboard-header">
             <div class="page-header mb-0">
                 <div class="container page-header__container">
-                    <h1 class="h2 page-header__title">Stylist Dashboard</h1>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                        <h1 class="h2 page-header__title mb-0">Stylist Dashboard</h1>
+                        <%
+                            Long upcomingTodayCount = (Long) request.getAttribute("upcomingTodayCount");
+                            if (upcomingTodayCount != null && upcomingTodayCount > 0) {
+                        %>
+                        <div class="d-flex align-items-center bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-3 py-1">
+                            <span><%= upcomingTodayCount %></span>
+                            <span class="ms-1 small">upcoming today</span>
+                        </div>
+                        <% } %>
+                    </div>
                     <p class="page-header__subtitle text-muted mb-3">Manage your schedule and professional availability.</p>
                 </div>
             </div>
@@ -140,7 +151,6 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th class="ps-4">ID</th>
                                     <th>Service</th>
                                     <th>Customer</th>
                                     <th>Slot</th>
@@ -159,7 +169,6 @@
                                         }
                             %>
                                 <tr>
-                                    <td class="ps-4"><strong>#<%= apt.getId() %></strong></td>
                                     <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
                                     <td>
                                         <div class="fw-semibold">
@@ -169,7 +178,6 @@
                                             Customer #<%= apt.getCustomerUserId() %>
                                         <% } %>
                                         </div>
-                                        <div class="text-muted small">User ID: <%= apt.getCustomerUserId() %></div>
                                     </td>
                                     <td>
                                         <div class="small">
