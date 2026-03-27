@@ -9,15 +9,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <jsp:include page="/WEB-INF/jsp/common/header.jsp" />
-
 <head>
     <title>The Studio - Stylist Dashboard</title>
 </head>
+<style>
+    #availability-scrollspy .nav-link {
+        color: var(--bs-secondary);
+        border-radius: 0.5rem;
+        padding: 0.5rem 1rem;
+    }
 
-<body>
+    #availability-scrollspy .nav-link:hover {
+        background-color: var(--bs-light);
+    }
+
+    #availability-scrollspy .nav-link.active {
+        background-color: var(--bs-primary);
+        color: white;
+    }
+
+    #availability-scrollspy .nav-link.disabled {
+        pointer-events: none;
+    }
+
+    [data-bs-spy="scroll"] {
+        position: relative;
+    }
+
+    .card {
+        scroll-margin-top: 2rem;
+    }
+
+    .dashboard-wrapper {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 56px);
+        overflow: hidden;
+        background-color: var(--bs-body-bg);
+    }
+
+    .dashboard-header {
+        flex-shrink: 0;
+        background-color: var(--bs-body-bg);
+    }
+
+    .dashboard-content {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding-bottom: 3rem;
+        background-color: var(--bs-tertiary-bg);
+    }
+
+    .tabs-wrapper {
+        background-color: var(--bs-tertiary-bg) !important;
+        padding-top: 1rem;
+    }
+
+    .tabs-inner-container {
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+</style>
+
+<body class="bg-light">
     <jsp:include page="/WEB-INF/jsp/common/navbar.jsp" />
 
-    <main class="container py-5">
+    <div class="dashboard-wrapper">
+        <header class="dashboard-header">
+            <div class="page-header mb-0">
+                <div class="container page-header__container">
+                    <h1 class="h2 page-header__title">Stylist Dashboard</h1>
+                    <p class="page-header__subtitle text-muted mb-3">Manage your schedule and professional availability.</p>
+                </div>
+            </div>
+
+            <div class="tabs-wrapper">
+                <div class="container">
+                    <div class="tabs-inner-container">
+                        <ul class="nav nav-tabs border-bottom-0">
+                            <li class="nav-item">
+                                <a class="nav-link active" href="#" data-tab="appointments">Appointments</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-tab="availability">Availability</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard-content" id="dashboard-scroll-area" data-bs-spy="scroll" data-bs-target="#availability-scrollspy" data-bs-offset="100">
+            <div class="container py-4">
         <%
             CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
             String successMessage = (String) request.getAttribute("successMessage");
@@ -29,122 +111,227 @@
             }
             DateTimeFormatter slotDateFormatter = DateTimeFormatter.ofPattern("EEE, MMM d h:mm a");
             DateTimeFormatter timeOnlyFormatter = DateTimeFormatter.ofPattern("h:mm a");
-        %>
-        <% if (successMessage != null) { %>
-            <div class="alert alert-success" role="alert"><%= successMessage %></div>
-        <% } %>
-        <% if (errorMessage != null) { %>
-            <div class="alert alert-danger" role="alert"><%= errorMessage %></div>
-        <% } %>
 
-        <div class="row g-4">
-            <div class="col-12">
-                <div class="card booking__card border-0">
-                    <div class="card-body p-4 p-md-5">
-                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-                            <div>
-                                <h2 class="h4 mb-1">Create Availability</h2>
+            if (successMessage != null) {
+        %>
+        <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+            <%= successMessage %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <%
+            }
+            if (errorMessage != null) {
+        %>
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            <%= errorMessage %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <%
+            }
+        %>
+
+        <div id="appointments-tab-content" data-tab="appointments">
+            <div class="card border-0 mb-5">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h2 class="h5 mb-0 fw-bold">Your Upcoming Services</h2>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-4">ID</th>
+                                    <th>Service</th>
+                                    <th>Customer</th>
+                                    <th>Slot</th>
+                                    <th>Status</th>
+                                    <th class="pe-4 text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <%
+                                List<AppointmentDto> appointments = (List<AppointmentDto>) request.getAttribute("appointments");
+                                if (appointments != null && !appointments.isEmpty()) {
+                                    for (AppointmentDto apt : appointments) {
+                                        String serviceName = apt.getServiceName();
+                                        if (serviceName == null || serviceName.isBlank()) {
+                                            serviceName = "Service #" + apt.getServiceId();
+                                        }
+                            %>
+                                <tr>
+                                    <td class="ps-4"><strong>#<%= apt.getId() %></strong></td>
+                                    <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
+                                    <td>
+                                        <div class="fw-semibold">
+                                        <% if (apt.getCustomerName() != null && !apt.getCustomerName().isBlank()) { %>
+                                            <%= apt.getCustomerName() %>
+                                        <% } else { %>
+                                            Customer #<%= apt.getCustomerUserId() %>
+                                        <% } %>
+                                        </div>
+                                        <div class="text-muted small">User ID: <%= apt.getCustomerUserId() %></div>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                        <% if (apt.getSlotStartDateTime() != null && apt.getSlotEndDateTime() != null) { %>
+                                            <%= apt.getSlotStartDateTime().format(slotDateFormatter) %> -
+                                            <%= apt.getSlotEndDateTime().format(timeOnlyFormatter) %>
+                                        <% } else { %>
+                                            Slot <%= apt.getAvailabilitySlotId() %>
+                                        <% } %>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <%
+                                            String aptBadgeClass = "bg-secondary";
+                                            if (apt.getStatus() == AppointmentStatus.Booked) {
+                                                aptBadgeClass = "bg-primary";
+                                            } else if (apt.getStatus() == AppointmentStatus.Complete) {
+                                                aptBadgeClass = "bg-success";
+                                            } else if (apt.getStatus() == AppointmentStatus.Canceled) {
+                                                aptBadgeClass = "bg-danger";
+                                            }
+                                        %>
+                                        <span class="badge <%= aptBadgeClass %>"><%= apt.getStatus().toString() %></span>
+                                    </td>
+                                    <td class="pe-4 text-end">
+                                        <% if (apt.getStatus() == AppointmentStatus.Booked) { %>
+                                            <form method="post" action="/appointments/<%= apt.getId() %>/cancel" class="d-inline">
+                                                <% if (csrfToken != null) { %>
+                                                    <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                                <% } %>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this appointment?')">Cancel</button>
+                                            </form>
+                                        <% } else { %>
+                                            <span class="text-muted small">—</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <%
+                                    }
+                                } else {
+                            %>
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <p class="text-muted mb-0">No appointments scheduled yet.</p>
+                                    </td>
+                                </tr>
+                            <%
+                                }
+                            %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="availability-tab-content" class="hidden" data-tab="availability">
+            <div class="row g-4">
+                <div class="col-lg-3 d-none d-lg-block">
+                    <div class="sticky-top" style="top: 1rem; z-index: 10;">
+                        <nav id="availability-scrollspy" class="nav nav-pills flex-column">
+                            <a class="nav-link" href="#create-availability">Create Availability</a>
+                            <a class="nav-link ms-3 my-1" href="#one-off-slot">One-Off Slot</a>
+                            <a class="nav-link ms-3 my-1" href="#bulk-create">Bulk Create</a>
+                            <a class="nav-link" href="#your-slots">Your Slots</a>
+                        </nav>
+                    </div>
+                </div>
+
+                <div class="col-lg-9">
+                    <div id="create-availability" class="mb-5">
+                        <div class="card border-0 mb-4">
+                            <div class="card-header bg-white border-bottom py-3">
+                                <h2 class="h5 mb-0 fw-bold">Availability Settings</h2>
+                            </div>
+                            <div class="card-body">
                                 <p class="text-muted mb-0">
-                                    Service: <strong><%= stylistServiceName == null ? "Assigned Service" : stylistServiceName %></strong>
-                                    · Slot length: <strong><%= stylistServiceDurationMinutes %> minutes</strong>
+                                    Assigned Service: <strong><%= stylistServiceName == null ? "Not Assigned" : stylistServiceName %></strong>
+                                    · Base Timing: <strong><%= stylistServiceDurationMinutes %> minutes</strong>
                                 </p>
                             </div>
                         </div>
 
-                        <div class="row g-4">
-                            <div class="col-12 col-xl-5">
-                                <div class="border rounded p-3 h-100">
-                                    <h3 class="h6 mb-3">One-Off Slot</h3>
-                                    <form method="post" action="/stylist/availability" class="row g-3 align-items-end">
-                                        <% if (csrfToken != null) { %>
-                                            <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
-                                        <% } %>
-                                        <div class="col-12">
-                                            <label for="startDateTime" class="form-label">Start</label>
-                                            <input id="startDateTime" name="startDateTime" type="datetime-local" class="form-control" required>
-                                        </div>
-                                        <div class="col-12 d-grid">
-                                            <button type="submit" class="btn btn-primary">Add Slot</button>
-                                        </div>
-                                    </form>
-                                </div>
+                        <div id="one-off-slot" class="card border-0 mb-4">
+                            <div class="card-header bg-white border-bottom py-3">
+                                <h3 class="h6 mb-0 fw-bold">Add One-Off Slot</h3>
                             </div>
-
-                            <div class="col-12 col-xl-7">
-                                <div class="border rounded p-3 h-100">
-                                    <h3 class="h6 mb-3">Bulk Create by Date Range</h3>
-                                    <form method="post" action="/stylist/availability/bulk" class="row g-3">
-                                        <% if (csrfToken != null) { %>
-                                            <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
-                                        <% } %>
-                                        <div class="col-md-6">
-                                            <label for="bulkStartDate" class="form-label">Start Date</label>
-                                            <input id="bulkStartDate" name="startDate" type="date" class="form-control" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="bulkEndDate" class="form-label">End Date</label>
-                                            <input id="bulkEndDate" name="endDate" type="date" class="form-control" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="bulkDayStartTime" class="form-label">Daily Start Time</label>
-                                            <input id="bulkDayStartTime" name="dayStartTime" type="time" class="form-control" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="bulkDayEndTime" class="form-label">Daily End Time</label>
-                                            <input id="bulkDayEndTime" name="dayEndTime" type="time" class="form-control" required>
-                                        </div>
-                                        <div class="col-12">
-                                            <span class="form-label d-block mb-2">Weekdays</span>
-                                            <div class="d-flex flex-wrap gap-3">
-                                                <div class="form-check form-check-inline mb-0">
-                                                    <input class="form-check-input" type="checkbox" id="wdMon" name="weekdays" value="MONDAY">
-                                                    <label class="form-check-label" for="wdMon">Mon</label>
-                                                </div>
-                                                <div class="form-check form-check-inline mb-0">
-                                                    <input class="form-check-input" type="checkbox" id="wdTue" name="weekdays" value="TUESDAY">
-                                                    <label class="form-check-label" for="wdTue">Tue</label>
-                                                </div>
-                                                <div class="form-check form-check-inline mb-0">
-                                                    <input class="form-check-input" type="checkbox" id="wdWed" name="weekdays" value="WEDNESDAY">
-                                                    <label class="form-check-label" for="wdWed">Wed</label>
-                                                </div>
-                                                <div class="form-check form-check-inline mb-0">
-                                                    <input class="form-check-input" type="checkbox" id="wdThu" name="weekdays" value="THURSDAY">
-                                                    <label class="form-check-label" for="wdThu">Thu</label>
-                                                </div>
-                                                <div class="form-check form-check-inline mb-0">
-                                                    <input class="form-check-input" type="checkbox" id="wdFri" name="weekdays" value="FRIDAY">
-                                                    <label class="form-check-label" for="wdFri">Fri</label>
-                                                </div>
-                                                <div class="form-check form-check-inline mb-0">
-                                                    <input class="form-check-input" type="checkbox" id="wdSat" name="weekdays" value="SATURDAY">
-                                                    <label class="form-check-label" for="wdSat">Sat</label>
-                                                </div>
-                                                <div class="form-check form-check-inline mb-0">
-                                                    <input class="form-check-input" type="checkbox" id="wdSun" name="weekdays" value="SUNDAY">
-                                                    <label class="form-check-label" for="wdSun">Sun</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-12 d-grid d-md-flex justify-content-md-end">
-                                            <button type="submit" class="btn btn-outline-primary">Generate Slots</button>
-                                        </div>
-                                    </form>
-                                </div>
+                            <div class="card-body">
+                                <form method="post" action="/stylist/availability" class="row g-3">
+                                    <% if (csrfToken != null) { %>
+                                        <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                    <% } %>
+                                    <div class="col-md-8">
+                                        <label for="startDateTime" class="form-label small text-muted">Start Date & Time</label>
+                                        <input id="startDateTime" name="startDateTime" type="datetime-local" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary w-100">Add Slot</button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
 
-                        <div class="mt-5">
-                            <h3 class="h6 mb-3">Your Availability Slots</h3>
-                            <div class="table-responsive bg-white rounded">
+                        <div id="bulk-create" class="card border-0 mb-4">
+                            <div class="card-header bg-white border-bottom py-3">
+                                <h3 class="h6 mb-0 fw-bold">Bulk Create Slots</h3>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" action="/stylist/availability/bulk" class="row g-3">
+                                    <% if (csrfToken != null) { %>
+                                        <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                    <% } %>
+                                    <div class="col-md-6">
+                                        <label for="bulkStartDate" class="form-label small text-muted">Start Date</label>
+                                        <input id="bulkStartDate" name="startDate" type="date" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="bulkEndDate" class="form-label small text-muted">End Date</label>
+                                        <input id="bulkEndDate" name="endDate" type="date" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="bulkDayStartTime" class="form-label small text-muted">Daily Start Time</label>
+                                        <input id="bulkDayStartTime" name="dayStartTime" type="time" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="bulkDayEndTime" class="form-label small text-muted">Daily End Time</label>
+                                        <input id="bulkDayEndTime" name="dayEndTime" type="time" class="form-control" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label small text-muted d-block mb-2">Active Weekdays</label>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <% String[] days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+                                               for (String day : days) { %>
+                                                <div class="flex-grow-1 flex-sm-grow-0">
+                                                    <input type="checkbox" class="btn-check" id="wd<%= day.substring(0,3) %>" name="weekdays" value="<%= day.toUpperCase() %>" autocomplete="off">
+                                                    <label class="btn btn-outline-primary btn-sm w-100" for="wd<%= day.substring(0,3) %>"><%= day.substring(0,3) %></label>
+                                                </div>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 text-end mt-4">
+                                        <button type="submit" class="btn btn-primary px-4">Generate Slots</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="your-slots" class="card border-0 mb-5">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h2 class="h5 mb-0 fw-bold">Your Availability Slots</h2>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
                                 <table class="table table-hover align-middle mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Slot ID</th>
+                                            <th class="ps-4">Slot ID</th>
                                             <th>Start</th>
                                             <th>End</th>
                                             <th>Status</th>
-                                            <th class="text-end">Action</th>
+                                            <th class="pe-4 text-end">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -154,9 +341,9 @@
                                                 for (AvailabilitySlot slot : slots) {
                                         %>
                                             <tr>
-                                                <td><strong>#<%= slot.getId() %></strong></td>
-                                                <td><%= slot.getStartDateTime().format(slotDateFormatter) %></td>
-                                                <td><%= slot.getEndDateTime().format(slotDateFormatter) %></td>
+                                                <td class="ps-4"><strong>#<%= slot.getId() %></strong></td>
+                                                <td><div class="small fw-medium"><%= slot.getStartDateTime().format(slotDateFormatter) %></div></td>
+                                                <td><div class="small text-muted"><%= slot.getEndDateTime().format(slotDateFormatter) %></div></td>
                                                 <td>
                                                     <%
                                                         String badgeClass = "bg-secondary";
@@ -170,16 +357,16 @@
                                                     %>
                                                     <span class="badge <%= badgeClass %>"><%= slot.getStatus().toString() %></span>
                                                 </td>
-                                                <td class="text-end">
+                                                <td class="pe-4 text-end">
                                                     <% if (slot.getStatus() == AvailabilitySlotStatus.Available) { %>
-                                                        <form method="post" action="/stylist/availability/<%= slot.getId() %>/delete" style="display:inline;">
+                                                        <form method="post" action="/stylist/availability/<%= slot.getId() %>/delete" class="d-inline">
                                                             <% if (csrfToken != null) { %>
                                                                 <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
                                                             <% } %>
                                                             <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Slot</button>
                                                         </form>
                                                     <% } else { %>
-                                                        <span class="text-muted small">-</span>
+                                                        <span class="text-muted small">—</span>
                                                     <% } %>
                                                 </td>
                                             </tr>
@@ -188,103 +375,7 @@
                                             } else {
                                         %>
                                             <tr>
-                                                <td colspan="5" class="text-center py-4 text-muted">No availability slots created yet.</td>
-                                            </tr>
-                                        <%
-                                            }
-                                        %>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12">
-                <div class="card booking__card border-0">
-                    <div class="card-body p-4 p-md-5">
-                        <div class="mb-4">
-                            <h1 class="h3 mb-1">Stylist Schedule</h1>
-                            <p class="text-muted mb-0">Review your assigned appointments for today and prepare for upcoming services.</p>
-                        </div>
-
-                        <div class="mt-5">
-                            <h2 class="h5 mb-4">Your Upcoming Services</h2>
-                            <div class="table-responsive bg-white rounded">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                            <tr>
-                                                <th>ID</th>
-                                                <th>Service</th>
-                                                <th>Customer</th>
-                                                <th>Slot</th>
-                                                <th>Status</th>
-                                                <th class="text-end">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                        <%
-                                            List<AppointmentDto> appointments = (List<AppointmentDto>) request.getAttribute("appointments");
-                                            if (appointments != null && !appointments.isEmpty()) {
-                                                for (AppointmentDto apt : appointments) {
-                                                    String serviceName = apt.getServiceName();
-                                                    if (serviceName == null || serviceName.isBlank()) {
-                                                        serviceName = "Service #" + apt.getServiceId();
-                                                    }
-                                        %>
-                                            <tr>
-                                                <td><strong>#<%= apt.getId() %></strong></td>
-                                                <td><span class="badge bg-primary text-white"><%= serviceName %></span></td>
-                                                <td>
-                                                    <% if (apt.getCustomerName() != null && !apt.getCustomerName().isBlank()) { %>
-                                                        <%= apt.getCustomerName() %> (<%= apt.getCustomerUserId() %>)
-                                                    <% } else { %>
-                                                        Customer ID <%= apt.getCustomerUserId() %>
-                                                    <% } %>
-                                                </td>
-                                                <td>
-                                                    <% if (apt.getSlotStartDateTime() != null && apt.getSlotEndDateTime() != null) { %>
-                                                        <%= apt.getSlotStartDateTime().format(slotDateFormatter) %> -
-                                                        <%= apt.getSlotEndDateTime().format(timeOnlyFormatter) %>
-                                                    <% } else { %>
-                                                        Slot <%= apt.getAvailabilitySlotId() %>
-                                                    <% } %>
-                                                </td>
-                                                <td>
-                                                    <%
-                                                        String aptBadgeClass = "bg-secondary";
-                                                        if (apt.getStatus() == AppointmentStatus.Booked) {
-                                                            aptBadgeClass = "bg-primary";
-                                                        } else if (apt.getStatus() == AppointmentStatus.Complete) {
-                                                            aptBadgeClass = "bg-success";
-                                                        } else if (apt.getStatus() == AppointmentStatus.Canceled) {
-                                                            aptBadgeClass = "bg-danger";
-                                                        }
-                                                    %>
-                                                    <span class="badge <%= aptBadgeClass %>"><%= apt.getStatus().toString() %></span>
-                                                </td>
-                                                <td class="text-end">
-                                                    <% if (apt.getStatus() == AppointmentStatus.Booked) { %>
-                                                        <form method="post" action="/appointments/<%= apt.getId() %>/cancel" style="display:inline;">
-                                                            <% if (csrfToken != null) { %>
-                                                                <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
-                                                            <% } %>
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this appointment?')">Cancel</button>
-                                                        </form>
-                                                    <% } else { %>
-                                                        <span class="text-muted small">-</span>
-                                                    <% } %>
-                                                </td>
-                                            </tr>
-                                        <%
-                                                }
-                                            } else {
-                                        %>
-                                            <tr>
-                                                <td colspan="4" class="text-center py-5 text-muted">
-                                                    No appointments scheduled yet.
-                                                </td>
+                                                <td colspan="5" class="text-center py-5 text-muted">No availability slots created yet.</td>
                                             </tr>
                                         <%
                                             }
@@ -297,10 +388,63 @@
                 </div>
             </div>
         </div>
-    </main>
+            </div>
+        </main>
+    </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabLinks = document.querySelectorAll('header.dashboard-header ul.nav-tabs .nav-link');
+            const tabContents = document.querySelectorAll('div[data-tab]');
+
+            function switchTab(targetTab) {
+                tabLinks.forEach(l => {
+                    if (l.getAttribute('data-tab') === targetTab) {
+                        l.classList.add('active');
+                    } else {
+                        l.classList.remove('active');
+                    }
+                });
+
+                tabContents.forEach(content => {
+                    if (content.getAttribute('data-tab') === targetTab) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+
+                // Update URL without reloading
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', targetTab);
+                window.history.pushState({path: url.href}, '', url.href);
+
+                // Refresh Scrollspy if availability is active
+                if (targetTab === 'availability') {
+                    setTimeout(() => {
+                        const scrollArea = document.getElementById('dashboard-scroll-area');
+                        const scrollspyInstance = bootstrap.ScrollSpy.getInstance(scrollArea);
+                        if (scrollspyInstance) {
+                            scrollspyInstance.refresh();
+                        }
+                    }, 100);
+                }
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialTab = urlParams.get('tab') || 'appointments';
+            switchTab(initialTab);
+
+            tabLinks.forEach(link => {
+                link.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    const targetTab = link.getAttribute('data-tab');
+                    switchTab(targetTab);
+                    document.getElementById('dashboard-scroll-area').scrollTop = 0;
+                });
+            });
+
+            // Availability Form Logic
             const startInput = document.getElementById('startDateTime');
             const bulkStartDateInput = document.getElementById('bulkStartDate');
             const bulkEndDateInput = document.getElementById('bulkEndDate');
