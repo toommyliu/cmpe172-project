@@ -178,6 +178,15 @@
 
                                 <!-- Step 2: Slot Selection -->
                                 <div id="step2" class="booking-step">
+                                    <div class="mb-4 text-muted small d-flex flex-wrap align-items-center gap-2">
+                                        <span>Booking: <strong class="text-dark" id="selectedServiceSummaryText">--</strong></span>
+                                        <span class="text-secondary opacity-50">•</span>
+                                        <span>With: <strong class="text-dark" id="selectedStylistSummaryText">--</strong></span>
+                                        <a href="javascript:void(0)" class="ms-md-auto text-primary text-decoration-none fw-semibold" onclick="goToStep(1)">
+                                            <i class="bi bi-pencil-square me-1"></i>Change
+                                        </a>
+                                    </div>
+
                                     <h4 class="h5 mb-4">Available time slots</h4>
                                     <div id="slotContainer" class="row g-3 mb-4"></div>
                                     <div id="slotEmptyState" class="alert alert-warning d-none">No available slots for this stylist right now.</div>
@@ -332,12 +341,12 @@
             }
 
             const selectedStylistOption = stylistSelect.options[stylistSelect.selectedIndex];
-            const selectedServiceId = serviceSelect.value;
-            const selectedStylistService = selectedStylistOption.getAttribute('data-service-id');
-            if (selectedServiceId !== selectedStylistService) {
-                alert('Please choose a stylist whose service matches your selection.');
-                return;
-            }
+            const selectedServiceOption = serviceSelect.options[serviceSelect.selectedIndex];
+
+            const serviceName = selectedServiceOption.text.split(' (')[0]; // Remove duration
+            const stylistName = selectedStylistOption.text.split(' - ')[0]; // Remove service name
+            document.getElementById('selectedServiceSummaryText').innerText = serviceName;
+            document.getElementById('selectedStylistSummaryText').innerText = stylistName;
 
             const serviceId = serviceSelect.value;
             fetch('/customer/stylists/' + stylistId + '/available-slots?serviceId=' + encodeURIComponent(serviceId))
