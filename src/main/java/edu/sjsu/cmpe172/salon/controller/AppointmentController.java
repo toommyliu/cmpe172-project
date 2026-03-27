@@ -237,15 +237,17 @@ public class AppointmentController {
                     slotDurationMinutes
             );
 
+            String errorHint = result.createdCount() > 0 
+                ? "<br><small>Some slots may have been skipped due to conflicts, invalid times, or being outside of provider hours.</small>" : "";
             if (result.createdCount() > 0) {
                 redirectAttributes.addFlashAttribute(
                         "successMessage",
-                        "Bulk availability created: " + result.createdCount() + " slot(s). Skipped: " + result.skippedCount() + "."
+                        "Bulk availability created: " + result.createdCount() + " slot(s). Skipped: " + result.skippedCount() + "." + errorHint
                 );
             } else {
                 redirectAttributes.addFlashAttribute(
                         "errorMessage",
-                        "No slots were created. Skipped: " + result.skippedCount() + "."
+                        "No slots were created. Skipped: " + result.skippedCount() + "." + errorHint
                 );
             }
         } catch (IllegalArgumentException | DateTimeParseException ex) {
