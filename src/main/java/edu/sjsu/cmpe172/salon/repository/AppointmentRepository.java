@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface AppointmentRepository {
     List<AppointmentDto> findAllViews();
 
+    Optional<AppointmentDto> findViewById(int id);
+
     Optional<Appointment> findById(int id);
 
     List<AppointmentDto> findViewsByCustomerUserId(int customerUserId);

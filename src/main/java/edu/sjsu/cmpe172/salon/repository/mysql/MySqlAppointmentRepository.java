@@ -60,6 +60,22 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
     }
 
     @Override
+    public Optional<AppointmentDto> findViewById(int id) {
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(AppointmentSql.FIND_BY_ID)) {
+            statement.setInt(1, id);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return Optional.of(dtoDataMapper.toDomain(resultSet));
+                }
+                return Optional.empty();
+            }
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to read appointment view " + id, ex);
+        }
+    }
+
+    @Override
     public Optional<Appointment> findById(int id) {
         try (Connection connection = openConnection();
              PreparedStatement statement = connection.prepareStatement(AppointmentSql.FIND_BY_ID)) {

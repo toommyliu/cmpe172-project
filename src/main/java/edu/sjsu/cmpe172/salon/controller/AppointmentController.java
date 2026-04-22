@@ -2,12 +2,15 @@ package edu.sjsu.cmpe172.salon.controller;
 
 import edu.sjsu.cmpe172.salon.enums.UserRole;
 import edu.sjsu.cmpe172.salon.exception.SlotReservationConflictException;
+import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
+import edu.sjsu.cmpe172.salon.dto.MockNotificationResponse;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import edu.sjsu.cmpe172.salon.model.Stylist;
 import edu.sjsu.cmpe172.salon.repository.ServiceRepository;
 import edu.sjsu.cmpe172.salon.security.SalonUserPrincipal;
 import edu.sjsu.cmpe172.salon.service.AppointmentService;
 import edu.sjsu.cmpe172.salon.service.AvailabilitySlotService;
+import edu.sjsu.cmpe172.salon.service.NotificationGatewayService;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -38,13 +41,16 @@ public class AppointmentController {
     private final AppointmentService service;
     private final AvailabilitySlotService availabilitySlotService;
     private final ServiceRepository serviceRepository;
+    private final NotificationGatewayService notificationGatewayService;
 
     public AppointmentController(AppointmentService service,
                                  AvailabilitySlotService availabilitySlotService,
-                                 ServiceRepository serviceRepository) {
+                                 ServiceRepository serviceRepository,
+                                 NotificationGatewayService notificationGatewayService) {
         this.service = service;
         this.availabilitySlotService = availabilitySlotService;
         this.serviceRepository = serviceRepository;
+        this.notificationGatewayService = notificationGatewayService;
     }
 
     @GetMapping("/appointments")
@@ -80,8 +86,24 @@ public class AppointmentController {
             appointment.setCustomerUserId(principal.getUserId());
         }
         try {
-            service.createAppointment(appointment);
-            redirectAttributes.addFlashAttribute("successMessage", "Appointment created successfully.");
+            Appointment createdAppointment = service.createAppointment(appointment);
+
+            try {
+                AppointmentDto createdAppointmentView = service.getAppointmentViewById(createdAppointment.getId())
+                        .orElseThrow(() -> new IllegalStateException("Unable to load created appointment details."));
+                MockNotificationResponse notificationResponse = notificationGatewayService.sendAppointmentConfirmation(createdAppointmentView);
+
+                redirectAttributes.addFlashAttribute(
+                        "successMessage",
+                        "Appointment created successfully. Confirmation notification status: " + notificationResponse.getStatus() + "."
+                );
+            } catch (Exception notificationException) {
+                redirectAttributes.addFlashAttribute("successMessage", "Appointment created successfully.");
+                redirectAttributes.addFlashAttribute(
+                        "errorMessage",
+                        "Appointment was created, but confirmation notification could not be sent."
+                );
+            }
         } catch (SlotReservationConflictException ex) {
             redirectAttributes.addFlashAttribute("bookingConflict", true);
             return "redirect:/dashboard?tab=book-now";

@@ -48,6 +48,10 @@ public class AppointmentService {
         return repository.findAllViews();
     }
 
+    public Optional<AppointmentDto> getAppointmentViewById(int id) {
+        return repository.findViewById(id);
+    }
+
     public Optional<Appointment> getAppointmentById(int id) {
         return repository.findById(id);
     }

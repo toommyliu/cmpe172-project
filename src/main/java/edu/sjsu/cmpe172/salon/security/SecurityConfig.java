@@ -32,10 +32,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**", "/mock-external/**"))
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(authorize -> authorize
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.ERROR).permitAll()
                         .requestMatchers("/css/**", "/js/**", "/", "/login", "/register").permitAll()
+                        .requestMatchers("/mock-external/**").permitAll()
+                        .requestMatchers("/api/appointments/*/confirmation").hasAnyRole("CUSTOMER", "ADMIN", "STYLIST")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/appointments").authenticated()
                         .requestMatchers("/appointments/*/cancel").hasAnyRole("CUSTOMER", "ADMIN", "STYLIST")
