@@ -1,6 +1,8 @@
 package edu.sjsu.cmpe172.salon.security;
 
 import jakarta.servlet.DispatcherType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -11,6 +13,8 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
+
     private final SalonUserDetailsService userDetailsService;
 
     public SecurityConfig(SalonUserDetailsService userDetailsService) {
@@ -36,7 +40,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(authorize -> authorize
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.INCLUDE, DispatcherType.ERROR).permitAll()
-                        .requestMatchers("/css/**", "/js/**", "/", "/login", "/register").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/", "/login", "/register", "/health").permitAll()
                         .requestMatchers("/mock-external/**").permitAll()
                         .requestMatchers("/api/appointments/*/confirmation").hasAnyRole("CUSTOMER", "ADMIN", "STYLIST")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
@@ -51,8 +55,23 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/dashboard", true)
-                        .failureUrl("/login?error=true")
+                        .successHandler((request, response, authentication) -> {
+                            Object principal = authentication.getPrincipal();
+                            if (principal instanceof SalonUserPrincipal salonUserPrincipal) {
+                                logger.info("user_login_succeeded userId={} userRole={}",
+                                        salonUserPrincipal.getUserId(),
+                                        salonUserPrincipal.getUserRole());
+                            } else {
+                                logger.info("user_login_succeeded username={}", authentication.getName());
+                            }
+                            response.sendRedirect("/dashboard");
+                        })
+                        .failureHandler((request, response, exception) -> {
+                            logger.warn("user_login_failed username={} reason=\"{}\"",
+                                    request.getParameter("username"),
+                                    exception.getClass().getSimpleName());
+                            response.sendRedirect("/login?error=true");
+                        })
                         .permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/logout")
