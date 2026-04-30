@@ -170,6 +170,11 @@
                                                     </div>
                                                 </td>
                                                 <td class="pe-4 text-end">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-outline-primary me-1"
+                                                            onclick="startCustomerReschedule(<%= apt.getId() %>, <%= apt.getServiceId() %>, <%= apt.getStylistUserId() %>)">
+                                                        Reschedule
+                                                    </button>
                                                     <button class="btn btn-sm btn-outline-danger" onclick="cancelAppointment(<%= apt.getId() %>)">
                                                        Cancel
                                                     </button>
@@ -262,7 +267,7 @@
                 <div id="book-now-tab-content" class="hidden" data-tab="book-now">
                     <div class="card border-0 mb-5">
                         <div class="card-header bg-white border-bottom py-3">
-                            <h2 class="h5 mb-1 fw-bold">Book an Appointment</h2>
+                            <h2 class="h5 mb-1 fw-bold" id="bookingFormTitle">Book an Appointment</h2>
                             <p class="text-muted small mb-0" id="stepIndicator">Step 1: Choose your service and stylist</p>
                         </div>
                         <div class="card-body p-4 p-md-5">
@@ -366,6 +371,10 @@
             const scrollArea = document.getElementById('dashboard-scroll-area');
 
             function switchTab(targetTab) {
+                if (targetTab === 'book-now' && !window.customerRescheduleStarting) {
+                    resetBookingMode();
+                }
+
                 tabLinks.forEach(l => {
                     if (l.getAttribute('data-tab') === targetTab) {
                         l.classList.add('active');
@@ -422,12 +431,47 @@
         const serviceSelect = document.getElementById('service');
         const nextButton = document.getElementById('nextToStep2');
         const confirmButton = document.getElementById('confirmBooking');
+        const bookingForm = document.getElementById('bookingForm');
+        const bookingFormTitle = document.getElementById('bookingFormTitle');
+        window.customerRescheduleStarting = false;
 
         function showBookingFlow() {
+            resetBookingMode();
             const bookButton = document.querySelector('[data-tab="book-now"]');
             if (bookButton) {
                 bookButton.click();
             }
+            goToStep(1);
+        }
+
+        function resetBookingMode() {
+            if (!bookingForm) return;
+            bookingForm.action = '/appointments';
+            bookingFormTitle.innerText = 'Book an Appointment';
+            confirmButton.innerText = 'Confirm Booking';
+            serviceSelect.value = '';
+            stylistSelect.value = '';
+            filterStylists();
+            resetSlotSelection();
+            goToStep(1);
+        }
+
+        function startCustomerReschedule(appointmentId, serviceId, stylistUserId) {
+            window.customerRescheduleStarting = true;
+            const bookButton = document.querySelector('[data-tab="book-now"]');
+            if (bookButton) {
+                bookButton.click();
+            }
+            window.customerRescheduleStarting = false;
+
+            bookingForm.action = '/appointments/' + appointmentId + '/reschedule';
+            bookingFormTitle.innerText = 'Reschedule Appointment';
+            confirmButton.innerText = 'Confirm Reschedule';
+            serviceSelect.value = String(serviceId);
+            filterStylists();
+            stylistSelect.value = String(stylistUserId);
+            validateStepOne();
+            resetSlotSelection();
             goToStep(1);
         }
 

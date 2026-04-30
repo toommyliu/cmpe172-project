@@ -21,6 +21,8 @@ public interface AppointmentRepository {
 
     Appointment createWithSlotReservation(Appointment appointment);
 
+    Appointment rescheduleWithSlotReservation(Appointment appointment);
+
     Appointment update(Appointment appointment);
 
     boolean deleteById(int id);

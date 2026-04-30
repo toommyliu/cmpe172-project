@@ -2,6 +2,7 @@ package edu.sjsu.cmpe172.salon.service;
 
 import edu.sjsu.cmpe172.salon.enums.AppointmentStatus;
 import edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus;
+import edu.sjsu.cmpe172.salon.enums.UserRole;
 import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
 import edu.sjsu.cmpe172.salon.exception.SlotReservationConflictException;
 import edu.sjsu.cmpe172.salon.model.Appointment;
@@ -211,6 +212,101 @@ public class AppointmentService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public Appointment updateAppointment(Appointment appointment) {
         return repository.update(appointment);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public Appointment rescheduleAppointment(int appointmentId,
+                                             int actorUserId,
+                                             UserRole actorRole,
+                                             int serviceId,
+                                             int stylistUserId,
+                                             int availabilitySlotId) {
+        if (actorRole == null) {
+            throw new IllegalArgumentException("You are not authorized to reschedule this appointment.");
+        }
+
+        Appointment existingAppointment = repository.findById(appointmentId)
+                .orElseThrow(() -> new IllegalArgumentException("Appointment not found."));
+
+        if (existingAppointment.getStatus() != AppointmentStatus.Booked) {
+            throw new IllegalArgumentException("Only booked appointments can be rescheduled.");
+        }
+
+        availabilitySlotRepository.findById(existingAppointment.getAvailabilitySlotId())
+                .filter(slot -> slot.getStartDateTime() != null && slot.getStartDateTime().isBefore(LocalDateTime.now()))
+                .ifPresent(slot -> {
+                    throw new IllegalArgumentException("Past appointments cannot be rescheduled.");
+                });
+
+        boolean isCustomerActor = actorRole == UserRole.Customer && existingAppointment.getCustomerUserId() == actorUserId;
+        boolean isStylistActor = actorRole == UserRole.Stylist && existingAppointment.getStylistUserId() == actorUserId;
+        if (!isCustomerActor && !isStylistActor) {
+            throw new IllegalArgumentException("You are not authorized to reschedule this appointment.");
+        }
+
+        if (isStylistActor && (stylistUserId != actorUserId || stylistUserId != existingAppointment.getStylistUserId())) {
+            throw new IllegalArgumentException("Stylists can only reschedule appointments assigned to themselves.");
+        }
+
+        if (availabilitySlotId == existingAppointment.getAvailabilitySlotId()) {
+            throw new IllegalArgumentException("Please select a different time slot.");
+        }
+
+        AvailabilitySlot slot = availabilitySlotRepository.findById(availabilitySlotId)
+                .orElseThrow(() -> new IllegalArgumentException("Selected time slot does not exist."));
+        if (slot.getStatus() != AvailabilitySlotStatus.Available) {
+            throw new IllegalArgumentException("Selected time slot is no longer available.");
+        }
+        if (slot.getStylistUserId() != stylistUserId) {
+            throw new IllegalArgumentException("Selected time slot does not belong to the selected stylist.");
+        }
+        if (!slot.getStartDateTime().isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Selected time slot must be in the future.");
+        }
+        if (!providerScheduleService.isSlotWithinProviderHours(
+                DEFAULT_PROVIDER_ID,
+                slot.getStartDateTime(),
+                slot.getEndDateTime())) {
+            throw new IllegalArgumentException("Selected time slot is outside provider operating hours.");
+        }
+
+        User stylistUser = userRepository.findById(stylistUserId)
+                .orElseThrow(() -> new IllegalArgumentException("Selected stylist does not exist."));
+        if (!(stylistUser instanceof Stylist stylist)) {
+            throw new IllegalArgumentException("Selected user is not a stylist.");
+        }
+
+        edu.sjsu.cmpe172.salon.model.Service selectedService = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new IllegalArgumentException("A valid service selection is required."));
+        if (stylist.getServiceId() != serviceId) {
+            throw new IllegalArgumentException("Selected stylist does not provide the chosen service.");
+        }
+        long slotDurationMinutes = Duration.between(slot.getStartDateTime(), slot.getEndDateTime()).toMinutes();
+        if (slotDurationMinutes != selectedService.getDurationMinutes()) {
+            throw new IllegalArgumentException("Selected slot duration does not match the service duration.");
+        }
+
+        Appointment rescheduledAppointment = new Appointment(
+                appointmentId,
+                existingAppointment.getCustomerUserId(),
+                stylistUserId,
+                serviceId,
+                availabilitySlotId,
+                AppointmentStatus.Booked
+        );
+
+        Appointment updatedAppointment = repository.rescheduleWithSlotReservation(rescheduledAppointment);
+        logger.info(
+                "appointment_rescheduled appointmentId={} actorUserId={} actorRole={} customerUserId={} stylistUserId={} serviceId={} oldAvailabilitySlotId={} newAvailabilitySlotId={} operation=reschedule status=success",
+                appointmentId,
+                actorUserId,
+                actorRole,
+                existingAppointment.getCustomerUserId(),
+                stylistUserId,
+                serviceId,
+                existingAppointment.getAvailabilitySlotId(),
+                availabilitySlotId);
+        return updatedAppointment;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)

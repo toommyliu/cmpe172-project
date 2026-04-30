@@ -200,9 +200,9 @@
                                             }
                                 %>
                                     <tr>
-                                        <td class="ps-4"><span class="badge bg-primary text-white"><%= serviceName %></span></td>
+                                        <td class="ps-4"><span class="badge bg-primary text-white" data-service-name><%= serviceName %></span></td>
                                         <td>
-                                            <div class="small fw-medium">
+                                            <div class="small fw-medium" data-customer-name>
                                             <% if (apt.getCustomerName() != null && !apt.getCustomerName().isBlank()) { %>
                                                 <%= apt.getCustomerName() %>
                                             <% } else { %>
@@ -224,6 +224,13 @@
                                             <span class="badge bg-primary">Booked</span>
                                         </td>
                                         <td class="pe-4 text-end">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-primary stylist-reschedule-button"
+                                                    data-appointment-id="<%= apt.getId() %>"
+                                                    data-service-id="<%= apt.getServiceId() %>"
+                                                    data-stylist-user-id="<%= apt.getStylistUserId() %>">
+                                                Reschedule
+                                            </button>
                                             <form method="post" action="/appointments/<%= apt.getId() %>/complete" class="d-inline">
                                                 <% if (csrfToken != null) { %>
                                                     <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
@@ -510,6 +517,40 @@
         </main>
     </div>
 
+    <div class="modal fade" id="stylistRescheduleModal" tabindex="-1" aria-labelledby="stylistRescheduleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <form method="post" id="stylistRescheduleForm">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="stylistRescheduleModalLabel">Reschedule Appointment</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <% if (csrfToken != null) { %>
+                            <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                        <% } %>
+                        <input type="hidden" id="stylistRescheduleServiceId" name="serviceId" value="">
+                        <input type="hidden" id="stylistRescheduleStylistUserId" name="stylistUserId" value="">
+                        <input type="hidden" id="stylistRescheduleSlotId" name="availabilitySlotId" value="">
+
+                        <div class="mb-4">
+                            <div class="small text-muted">Appointment</div>
+                            <div class="fw-semibold" id="stylistRescheduleSummary">--</div>
+                        </div>
+
+                        <h3 class="h6 mb-3">Available time slots</h3>
+                        <div id="stylistRescheduleSlotContainer" class="row g-3"></div>
+                        <div id="stylistRescheduleSlotEmptyState" class="alert alert-warning d-none mb-0"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="stylistRescheduleSubmit" disabled>Confirm Reschedule</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const tabLinks = document.querySelectorAll('header.dashboard-header ul.nav-tabs .nav-link');
@@ -650,6 +691,89 @@
                     });
                 });
             }
+
+            const rescheduleModalEl = document.getElementById('stylistRescheduleModal');
+            const rescheduleModal = rescheduleModalEl ? new bootstrap.Modal(rescheduleModalEl) : null;
+            const rescheduleForm = document.getElementById('stylistRescheduleForm');
+            const rescheduleServiceId = document.getElementById('stylistRescheduleServiceId');
+            const rescheduleStylistUserId = document.getElementById('stylistRescheduleStylistUserId');
+            const rescheduleSlotId = document.getElementById('stylistRescheduleSlotId');
+            const rescheduleSummary = document.getElementById('stylistRescheduleSummary');
+            const rescheduleSlotContainer = document.getElementById('stylistRescheduleSlotContainer');
+            const rescheduleSlotEmptyState = document.getElementById('stylistRescheduleSlotEmptyState');
+            const rescheduleSubmit = document.getElementById('stylistRescheduleSubmit');
+
+            function resetStylistRescheduleSlots() {
+                rescheduleSlotId.value = '';
+                rescheduleSubmit.disabled = true;
+                rescheduleSlotContainer.innerHTML = '';
+                rescheduleSlotEmptyState.classList.add('d-none');
+                rescheduleSlotEmptyState.innerText = '';
+            }
+
+            function selectStylistRescheduleSlot(slot, button) {
+                rescheduleSlotContainer.querySelectorAll('.booking__slot').forEach(el => {
+                    el.classList.remove('booking__slot--selected');
+                });
+                button.classList.add('booking__slot--selected');
+                rescheduleSlotId.value = slot.id;
+                rescheduleSubmit.disabled = false;
+            }
+
+            function renderStylistRescheduleSlots(slots) {
+                resetStylistRescheduleSlots();
+
+                if (!slots.length) {
+                    rescheduleSlotEmptyState.innerText = 'No available slots for this appointment right now.';
+                    rescheduleSlotEmptyState.classList.remove('d-none');
+                    return;
+                }
+
+                slots.forEach(slot => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4 col-6';
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'booking__slot py-3 text-center rounded bg-light w-100 border-0';
+                    button.innerHTML = '<div class="fw-bold">' + slot.startLabel + '</div>' +
+                        '<div class="small text-muted">Ends ' + slot.endLabel + '</div>';
+                    button.addEventListener('click', () => selectStylistRescheduleSlot(slot, button));
+                    col.appendChild(button);
+                    rescheduleSlotContainer.appendChild(col);
+                });
+            }
+
+            document.querySelectorAll('.stylist-reschedule-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    const row = button.closest('tr');
+                    const appointmentId = button.getAttribute('data-appointment-id');
+                    const serviceId = button.getAttribute('data-service-id');
+                    const stylistUserId = button.getAttribute('data-stylist-user-id');
+                    const serviceName = row.querySelector('[data-service-name]')?.textContent.trim() || 'Service';
+                    const customerName = row.querySelector('[data-customer-name]')?.textContent.trim() || 'Customer';
+
+                    rescheduleForm.action = '/appointments/' + appointmentId + '/reschedule';
+                    rescheduleServiceId.value = serviceId;
+                    rescheduleStylistUserId.value = stylistUserId;
+                    rescheduleSummary.innerText = serviceName + ' for ' + customerName;
+                    resetStylistRescheduleSlots();
+                    rescheduleSlotEmptyState.innerText = 'Loading available slots...';
+                    rescheduleSlotEmptyState.classList.remove('d-none');
+                    rescheduleModal.show();
+
+                    fetch('/stylists/' + encodeURIComponent(stylistUserId) + '/available-slots?serviceId=' + encodeURIComponent(serviceId))
+                        .then(response => {
+                            if (!response.ok) throw new Error('Failed to load available slots.');
+                            return response.json();
+                        })
+                        .then(renderStylistRescheduleSlots)
+                        .catch(error => {
+                            resetStylistRescheduleSlots();
+                            rescheduleSlotEmptyState.innerText = error.message;
+                            rescheduleSlotEmptyState.classList.remove('d-none');
+                        });
+                });
+            });
         });
     </script>
 </body>

@@ -142,6 +142,39 @@ public class AppointmentController {
         return "redirect:/appointments";
     }
 
+    @PostMapping("/appointments/{id}/reschedule")
+    public String rescheduleAppointment(@PathVariable int id,
+                                        @AuthenticationPrincipal SalonUserPrincipal principal,
+                                        @RequestParam int serviceId,
+                                        @RequestParam int stylistUserId,
+                                        @RequestParam int availabilitySlotId,
+                                        RedirectAttributes redirectAttributes) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            service.rescheduleAppointment(
+                    id,
+                    principal.getUserId(),
+                    principal.getUserRole(),
+                    serviceId,
+                    stylistUserId,
+                    availabilitySlotId);
+            redirectAttributes.addFlashAttribute("successMessage", "Appointment rescheduled successfully.");
+        } catch (SlotReservationConflictException ex) {
+            redirectAttributes.addFlashAttribute("bookingConflict", true);
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+
+        if (principal.getUserRole() == UserRole.Stylist) {
+            return "redirect:/dashboard?tab=appointments";
+        }
+        return "redirect:/dashboard";
+    }
+
     @PostMapping("/appointments/{id}/delete")
     public String deleteAppointment(@PathVariable int id, RedirectAttributes redirectAttributes) {
         if (service.deleteAppointment(id)) {
@@ -210,7 +243,27 @@ public class AppointmentController {
     public List<Map<String, String>> getAvailableSlotsForStylist(@PathVariable int stylistId,
                                                                   @RequestParam(required = false) Integer serviceId,
                                                                   @AuthenticationPrincipal SalonUserPrincipal principal) {
-        if (principal == null || (principal.getUserRole() != UserRole.Customer && principal.getUserRole() != UserRole.Admin)) {
+        return getAvailableSlotsForStylistInternal(stylistId, serviceId, principal);
+    }
+
+    @GetMapping("/stylists/{stylistId}/available-slots")
+    @ResponseBody
+    public List<Map<String, String>> getSharedAvailableSlotsForStylist(@PathVariable int stylistId,
+                                                                        @RequestParam(required = false) Integer serviceId,
+                                                                        @AuthenticationPrincipal SalonUserPrincipal principal) {
+        return getAvailableSlotsForStylistInternal(stylistId, serviceId, principal);
+    }
+
+    private List<Map<String, String>> getAvailableSlotsForStylistInternal(int stylistId,
+                                                                          Integer serviceId,
+                                                                          SalonUserPrincipal principal) {
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized access.");
+        }
+        boolean canViewSlots = principal.getUserRole() == UserRole.Customer
+                || principal.getUserRole() == UserRole.Admin
+                || (principal.getUserRole() == UserRole.Stylist && principal.getUserId() == stylistId);
+        if (!canViewSlots) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Unauthorized access.");
         }
 

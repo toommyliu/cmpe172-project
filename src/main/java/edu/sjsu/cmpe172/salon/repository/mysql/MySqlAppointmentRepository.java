@@ -1,6 +1,7 @@
 package edu.sjsu.cmpe172.salon.repository.mysql;
 
 import edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus;
+import edu.sjsu.cmpe172.salon.enums.AppointmentStatus;
 import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
 import edu.sjsu.cmpe172.salon.exception.SlotReservationConflictException;
 import edu.sjsu.cmpe172.salon.model.Appointment;
@@ -158,6 +159,79 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
         } catch (SQLException ex) {
             rollbackQuietly(connection);
             throw new IllegalStateException("Failed to create appointment", ex);
+        } finally {
+            closeQuietly(connection);
+        }
+    }
+
+    @Override
+    public Appointment rescheduleWithSlotReservation(Appointment appointment) {
+        Connection connection = null;
+        try {
+            connection = openConnection();
+            connection.setAutoCommit(false);
+            connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+            int oldAvailabilitySlotId;
+            try (PreparedStatement findAppointmentStatement = connection.prepareStatement(AppointmentSql.FIND_BY_ID_FOR_UPDATE)) {
+                findAppointmentStatement.setInt(1, appointment.getId());
+                try (ResultSet resultSet = findAppointmentStatement.executeQuery()) {
+                    if (!resultSet.next()) {
+                        throw new IllegalArgumentException("Appointment not found.");
+                    }
+                    AppointmentStatus currentStatus = AppointmentStatus.fromValue(resultSet.getInt("status"));
+                    if (currentStatus != AppointmentStatus.Booked) {
+                        throw new IllegalArgumentException("Only booked appointments can be rescheduled.");
+                    }
+                    oldAvailabilitySlotId = resultSet.getInt("availability_slot_id");
+                }
+            }
+
+            try (PreparedStatement findSlotStatement = connection.prepareStatement(AvailabilitySlotSql.FIND_BY_ID);
+                 PreparedStatement markSlotBookedStatement = connection.prepareStatement(AvailabilitySlotSql.MARK_SLOT_BOOKED_BY_ID_AND_VERSION);
+                 PreparedStatement updateAppointmentStatement = connection.prepareStatement(AppointmentSql.UPDATE);
+                 PreparedStatement setOldSlotAvailableStatement = connection.prepareStatement(AvailabilitySlotSql.MARK_SLOT_AVAILABLE_BY_ID)) {
+
+                findSlotStatement.setInt(1, appointment.getAvailabilitySlotId());
+                try (ResultSet resultSet = findSlotStatement.executeQuery()) {
+                    if (!resultSet.next()) {
+                        throw new IllegalArgumentException("Selected time slot does not exist.");
+                    }
+
+                    int stylistUserId = resultSet.getInt("stylist_user_id");
+                    AvailabilitySlotStatus slotStatus = AvailabilitySlotStatus.fromValue(resultSet.getInt("status"));
+                    int slotVersion = resultSet.getInt("version");
+                    if (stylistUserId != appointment.getStylistUserId()) {
+                        throw new IllegalArgumentException("Selected time slot does not belong to the selected stylist.");
+                    }
+                    if (slotStatus != AvailabilitySlotStatus.Available) {
+                        throw new IllegalArgumentException("Selected time slot is no longer available.");
+                    }
+
+                    markSlotBookedStatement.setInt(1, appointment.getAvailabilitySlotId());
+                    markSlotBookedStatement.setInt(2, slotVersion);
+                    if (markSlotBookedStatement.executeUpdate() == 0) {
+                        throw new SlotReservationConflictException("Selected time slot was just booked by another customer.");
+                    }
+                }
+
+                dataMapper.bindForUpdate(updateAppointmentStatement, appointment);
+                if (updateAppointmentStatement.executeUpdate() == 0) {
+                    throw new IllegalArgumentException("Appointment not found: " + appointment.getId());
+                }
+
+                setOldSlotAvailableStatement.setInt(1, oldAvailabilitySlotId);
+                setOldSlotAvailableStatement.executeUpdate();
+            }
+
+            connection.commit();
+            return appointment;
+        } catch (IllegalArgumentException ex) {
+            rollbackQuietly(connection);
+            throw ex;
+        } catch (SQLException ex) {
+            rollbackQuietly(connection);
+            throw new IllegalStateException("Failed to reschedule appointment " + appointment.getId(), ex);
         } finally {
             closeQuietly(connection);
         }
