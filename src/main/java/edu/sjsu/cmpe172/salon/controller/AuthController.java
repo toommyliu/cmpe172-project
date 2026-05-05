@@ -110,22 +110,26 @@ public class AuthController {
                 yield "dashboard/admin";
             }
             case Stylist -> {
+                LocalDateTime now = LocalDateTime.now();
+                LocalDate today = now.toLocalDate();
+                addReconciliationNotice(
+                        model,
+                        appointmentService.reconcileCompletedAppointmentsForDashboard(
+                                principal.getUserId(),
+                                principal.getUserRole(),
+                                now));
+
                 List<AppointmentDto> appointments = appointmentService
                         .getAppointmentViewsForStylist(principal.getUserId());
 
-                LocalDateTime now = LocalDateTime.now();
-                LocalDate today = now.toLocalDate();
-
                 List<AppointmentDto> upcomingAppointments = appointments.stream()
-                        .filter(a -> a.getStatus() == AppointmentStatus.Booked
-                                && (a.getSlotStartDateTime() == null || !a.getSlotStartDateTime().isBefore(now)))
+                        .filter(a -> isUpcomingAppointment(a, now))
                         .sorted(Comparator.comparing(AppointmentDto::getSlotStartDateTime,
                                 Comparator.nullsLast(Comparator.naturalOrder())))
                         .toList();
 
                 List<AppointmentDto> pastAppointments = appointments.stream()
-                        .filter(a -> a.getStatus() != AppointmentStatus.Booked
-                                || (a.getSlotStartDateTime() != null && a.getSlotStartDateTime().isBefore(now)))
+                        .filter(a -> isPastAppointment(a, now))
                         .sorted(Comparator.comparing(AppointmentDto::getSlotStartDateTime,
                                 Comparator.nullsLast(Comparator.reverseOrder())))
                         .toList();
@@ -150,21 +154,25 @@ public class AuthController {
                 yield "dashboard/stylist";
             }
             case Customer -> {
+                LocalDateTime now = LocalDateTime.now();
+                addReconciliationNotice(
+                        model,
+                        appointmentService.reconcileCompletedAppointmentsForDashboard(
+                                principal.getUserId(),
+                                principal.getUserRole(),
+                                now));
+
                 List<AppointmentDto> appointments = appointmentService
                         .getAppointmentViewsForCustomer(principal.getUserId());
 
-                LocalDateTime now = LocalDateTime.now();
-
                 List<AppointmentDto> upcomingAppointments = appointments.stream()
-                        .filter(a -> a.getStatus() == AppointmentStatus.Booked
-                                && (a.getSlotStartDateTime() == null || !a.getSlotStartDateTime().isBefore(now)))
+                        .filter(a -> isUpcomingAppointment(a, now))
                         .sorted(Comparator.comparing(AppointmentDto::getSlotStartDateTime,
                                 Comparator.nullsLast(Comparator.naturalOrder())))
                         .toList();
 
                 List<AppointmentDto> pastAppointments = appointments.stream()
-                        .filter(a -> a.getStatus() != AppointmentStatus.Booked
-                                || (a.getSlotStartDateTime() != null && a.getSlotStartDateTime().isBefore(now)))
+                        .filter(a -> isPastAppointment(a, now))
                         .sorted(Comparator.comparing(AppointmentDto::getSlotStartDateTime,
                                 Comparator.nullsLast(Comparator.reverseOrder())))
                         .toList();
@@ -176,5 +184,38 @@ public class AuthController {
                 yield "dashboard/customer";
             }
         };
+    }
+
+    /**
+     * Upcoming includes booked appointments until their scheduled slot has ended.
+     */
+    static boolean isUpcomingAppointment(AppointmentDto appointment, LocalDateTime now) {
+        return appointment.getStatus() == AppointmentStatus.Booked
+                && (appointment.getSlotEndDateTime() == null || appointment.getSlotEndDateTime().isAfter(now));
+    }
+
+    /**
+     * History includes terminal appointments and booked appointments whose scheduled slot has ended.
+     */
+    static boolean isPastAppointment(AppointmentDto appointment, LocalDateTime now) {
+        return appointment.getStatus() != AppointmentStatus.Booked
+                || (appointment.getSlotEndDateTime() != null && !appointment.getSlotEndDateTime().isAfter(now));
+    }
+
+    /**
+     * Preserves any existing success flash while surfacing automatic completion reconciliation.
+     */
+    private void addReconciliationNotice(Model model, int reconciledCount) {
+        if (reconciledCount <= 0) {
+            return;
+        }
+
+        String notice = reconciledCount + " past appointment(s) were automatically marked completed.";
+        Object existingSuccessMessage = model.asMap().get("successMessage");
+        if (existingSuccessMessage instanceof String existingMessage && !existingMessage.isBlank()) {
+            model.addAttribute("successMessage", existingMessage + " " + notice);
+        } else {
+            model.addAttribute("successMessage", notice);
+        }
     }
 }

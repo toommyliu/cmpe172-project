@@ -20,6 +20,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -253,6 +255,24 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
     }
 
     @Override
+    public int completeBookedAppointmentsForCustomerEndedBefore(int customerUserId, LocalDateTime cutoff) {
+        return completeBookedAppointmentsEndedBefore(
+                AppointmentSql.COMPLETE_BOOKED_FOR_CUSTOMER_ENDED_BEFORE,
+                customerUserId,
+                cutoff,
+                "customer " + customerUserId);
+    }
+
+    @Override
+    public int completeBookedAppointmentsForStylistEndedBefore(int stylistUserId, LocalDateTime cutoff) {
+        return completeBookedAppointmentsEndedBefore(
+                AppointmentSql.COMPLETE_BOOKED_FOR_STYLIST_ENDED_BEFORE,
+                stylistUserId,
+                cutoff,
+                "stylist " + stylistUserId);
+    }
+
+    @Override
     public boolean deleteById(int id) {
         Connection connection = null;
         try {
@@ -294,6 +314,20 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
             throw new IllegalStateException("Failed to delete appointment " + id, ex);
         } finally {
             closeQuietly(connection);
+        }
+    }
+
+    private int completeBookedAppointmentsEndedBefore(String sql, int userId, LocalDateTime cutoff, String scopeDescription) {
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            // The caller chooses customer or stylist scope by passing the matching SQL statement.
+            statement.setInt(1, AppointmentStatus.Complete.getValue());
+            statement.setInt(2, userId);
+            statement.setInt(3, AppointmentStatus.Booked.getValue());
+            statement.setTimestamp(4, Timestamp.valueOf(cutoff));
+            return statement.executeUpdate();
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to complete ended appointments for " + scopeDescription, ex);
         }
     }
 

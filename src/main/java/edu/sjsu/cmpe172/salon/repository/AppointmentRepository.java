@@ -3,6 +3,7 @@ package edu.sjsu.cmpe172.salon.repository;
 import edu.sjsu.cmpe172.salon.model.Appointment;
 import edu.sjsu.cmpe172.salon.dto.AppointmentDto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,6 +25,20 @@ public interface AppointmentRepository {
     Appointment rescheduleWithSlotReservation(Appointment appointment);
 
     Appointment update(Appointment appointment);
+
+    /**
+     * Marks this customer's booked appointments complete once their reserved slot has ended.
+     *
+     * @return number of appointments updated
+     */
+    int completeBookedAppointmentsForCustomerEndedBefore(int customerUserId, LocalDateTime cutoff);
+
+    /**
+     * Marks this stylist's booked appointments complete once their reserved slot has ended.
+     *
+     * @return number of appointments updated
+     */
+    int completeBookedAppointmentsForStylistEndedBefore(int stylistUserId, LocalDateTime cutoff);
 
     boolean deleteById(int id);
 }

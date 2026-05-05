@@ -4,6 +4,7 @@
 <%@ page import="edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus" %>
 <%@ page import="edu.sjsu.cmpe172.salon.enums.AppointmentStatus" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.time.LocalDateTime" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
 <!DOCTYPE html>
@@ -289,6 +290,7 @@
                                         <th>Customer</th>
                                         <th>Slot</th>
                                         <th>Status</th>
+                                        <th class="pe-4 text-end">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -324,13 +326,30 @@
                                         <td>
                                             <%
                                                 String aptBadgeClass = "bg-secondary";
-                                                if (apt.getStatus() == AppointmentStatus.Complete) {
-                                                    aptBadgeClass = "bg-success";
-                                                } else if (apt.getStatus() == AppointmentStatus.Canceled) {
-                                                    aptBadgeClass = "bg-danger";
-                                                }
+                                            if (apt.getStatus() == AppointmentStatus.Complete) {
+                                                aptBadgeClass = "bg-success";
+                                            } else if (apt.getStatus() == AppointmentStatus.Canceled) {
+                                                aptBadgeClass = "bg-danger";
+                                            }
                                             %>
                                             <span class="badge <%= aptBadgeClass %>"><%= apt.getStatus().toString() %></span>
+                                        </td>
+                                        <td class="pe-4 text-end">
+                                            <%
+                                                boolean canCompletePastAppointment = apt.getStatus() == AppointmentStatus.Booked
+                                                        && apt.getSlotEndDateTime() != null
+                                                        && !apt.getSlotEndDateTime().isAfter(LocalDateTime.now());
+                                                if (canCompletePastAppointment) {
+                                            %>
+                                                <form method="post" action="/appointments/<%= apt.getId() %>/complete" class="d-inline">
+                                                    <% if (csrfToken != null) { %>
+                                                        <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                                    <% } %>
+                                                    <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Mark this appointment as completed?')">Complete</button>
+                                                </form>
+                                            <% } else { %>
+                                                <span class="text-muted small">-</span>
+                                            <% } %>
                                         </td>
                                     </tr>
                                 <%

@@ -129,6 +129,24 @@ public final class AppointmentSql {
             WHERE id = ?
             """;
 
+    public static final String COMPLETE_BOOKED_FOR_CUSTOMER_ENDED_BEFORE = """
+            UPDATE appointments a
+            INNER JOIN availability_slots s ON s.id = a.availability_slot_id
+            SET a.status = ?
+            WHERE a.customer_user_id = ?
+                AND a.status = ?
+                AND s.end_datetime <= ?
+            """;
+
+    public static final String COMPLETE_BOOKED_FOR_STYLIST_ENDED_BEFORE = """
+            UPDATE appointments a
+            INNER JOIN availability_slots s ON s.id = a.availability_slot_id
+            SET a.status = ?
+            WHERE a.stylist_user_id = ?
+                AND a.status = ?
+                AND s.end_datetime <= ?
+            """;
+
     public static final String FIND_BY_ID_FOR_UPDATE = """
             SELECT id, customer_user_id, stylist_user_id, service_id, availability_slot_id, status
             FROM appointments

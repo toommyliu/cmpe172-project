@@ -57,7 +57,8 @@ class MySqlAppointmentRepositoryConcurrencyTest {
                 LocalDateTime.now().plusDays(1).plusMinutes(30)));
 
         ExecutorService executor = Executors.newFixedThreadPool(2);
-        // Coordinate both worker threads so they submit the reservation at the same time.
+        // Coordinate both worker threads so they submit the reservation at the same
+        // time.
         CountDownLatch ready = new CountDownLatch(2);
         CountDownLatch start = new CountDownLatch(1);
         try {
@@ -87,7 +88,8 @@ class MySqlAppointmentRepositoryConcurrencyTest {
                     .filter(Boolean::booleanValue)
                     .count();
 
-            // The booking invariant: one success, one appointment row, and the slot marked booked.
+            // The booking invariant: one success, one appointment row, and the slot marked
+            // booked.
             assertEquals(1, successfulBookings);
             assertEquals(1, countAppointmentsForSlot(dbUrl, slot.getId()));
             assertSlotState(dbUrl, slot.getId(), AvailabilitySlotStatus.Booked, 1);
@@ -97,12 +99,12 @@ class MySqlAppointmentRepositoryConcurrencyTest {
     }
 
     private Callable<Boolean> bookSlotAtSameTime(MySqlAppointmentRepository appointmentRepository,
-                                                 CountDownLatch ready,
-                                                 CountDownLatch start,
-                                                 int customerUserId,
-                                                 int stylistUserId,
-                                                 int serviceId,
-                                                 int availabilitySlotId) {
+            CountDownLatch ready,
+            CountDownLatch start,
+            int customerUserId,
+            int stylistUserId,
+            int serviceId,
+            int availabilitySlotId) {
         return () -> {
             // Signal readiness, then block until the test releases both customers.
             ready.countDown();
@@ -118,8 +120,8 @@ class MySqlAppointmentRepositoryConcurrencyTest {
             try {
                 appointmentRepository.createWithSlotReservation(appointment);
                 return true;
-            // Reservation conflicts are expected for the losing customer.
             } catch (IllegalArgumentException ex) {
+                // Reservation conflicts are expected for the losing customer.
                 return false;
             }
         };
@@ -127,10 +129,10 @@ class MySqlAppointmentRepositoryConcurrencyTest {
 
     private int insertService(String dbUrl) throws Exception {
         try (Connection connection = DriverManager.getConnection(dbUrl, DB_USERNAME, DB_PASSWORD);
-             PreparedStatement statement = connection.prepareStatement("""
-                     INSERT INTO services (code, name, description, price, duration_minutes)
-                     VALUES (?, ?, ?, ?, ?)
-                     """, Statement.RETURN_GENERATED_KEYS)) {
+                PreparedStatement statement = connection.prepareStatement("""
+                        INSERT INTO services (code, name, description, price, duration_minutes)
+                        VALUES (?, ?, ?, ?, ?)
+                        """, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, "haircut");
             statement.setString(2, "Haircut");
             statement.setString(3, "Test haircut");
@@ -147,11 +149,11 @@ class MySqlAppointmentRepositoryConcurrencyTest {
 
     private int countAppointmentsForSlot(String dbUrl, int availabilitySlotId) throws Exception {
         try (Connection connection = DriverManager.getConnection(dbUrl, DB_USERNAME, DB_PASSWORD);
-             PreparedStatement statement = connection.prepareStatement("""
-                     SELECT COUNT(*)
-                     FROM appointments
-                     WHERE availability_slot_id = ?
-                     """)) {
+                PreparedStatement statement = connection.prepareStatement("""
+                        SELECT COUNT(*)
+                        FROM appointments
+                        WHERE availability_slot_id = ?
+                        """)) {
             statement.setInt(1, availabilitySlotId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 resultSet.next();
@@ -161,15 +163,15 @@ class MySqlAppointmentRepositoryConcurrencyTest {
     }
 
     private void assertSlotState(String dbUrl,
-                                 int slotId,
-                                 AvailabilitySlotStatus expectedStatus,
-                                 int expectedVersion) throws Exception {
+            int slotId,
+            AvailabilitySlotStatus expectedStatus,
+            int expectedVersion) throws Exception {
         try (Connection connection = DriverManager.getConnection(dbUrl, DB_USERNAME, DB_PASSWORD);
-             PreparedStatement statement = connection.prepareStatement("""
-                     SELECT status, version
-                     FROM availability_slots
-                     WHERE id = ?
-                     """)) {
+                PreparedStatement statement = connection.prepareStatement("""
+                        SELECT status, version
+                        FROM availability_slots
+                        WHERE id = ?
+                        """)) {
             statement.setInt(1, slotId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 resultSet.next();

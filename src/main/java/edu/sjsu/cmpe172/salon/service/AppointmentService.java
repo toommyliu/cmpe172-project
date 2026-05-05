@@ -74,6 +74,29 @@ public class AppointmentService {
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
+    public int reconcileCompletedAppointmentsForDashboard(int userId, UserRole role, LocalDateTime cutoff) {
+        if (role == null) {
+            return 0;
+        }
+
+        int reconciledCount = switch (role) {
+            case Customer -> repository.completeBookedAppointmentsForCustomerEndedBefore(userId, cutoff);
+            case Stylist -> repository.completeBookedAppointmentsForStylistEndedBefore(userId, cutoff);
+            case Admin -> 0;
+        };
+
+        if (reconciledCount > 0) {
+            logger.info(
+                    "appointments_reconciled_completed userId={} role={} reconciledCount={} cutoff={}",
+                    userId,
+                    role,
+                    reconciledCount,
+                    cutoff);
+        }
+        return reconciledCount;
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Appointment createAppointment(Appointment appointment) {
         Timer.Sample timer = monitoringService.startAppointmentCreateTimer();
         long startedNanos = System.nanoTime();
@@ -354,6 +377,13 @@ public class AppointmentService {
             }
             if (appointment.getStatus() == AppointmentStatus.Canceled) {
                 throw new IllegalArgumentException("Cannot complete a canceled appointment.");
+            }
+
+            // Completion represents delivered work, so it is only valid after the scheduled slot ends.
+            AvailabilitySlot slot = availabilitySlotRepository.findById(appointment.getAvailabilitySlotId())
+                    .orElseThrow(() -> new IllegalArgumentException("Appointment time slot not found."));
+            if (slot.getEndDateTime() == null || slot.getEndDateTime().isAfter(LocalDateTime.now())) {
+                throw new IllegalArgumentException("Appointments can only be completed after the scheduled end time.");
             }
 
             appointment.setStatus(AppointmentStatus.Complete);
