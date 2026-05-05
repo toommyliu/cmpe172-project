@@ -146,6 +146,7 @@ public class AuthController {
                 model.addAttribute("availabilitySlots",
                         availabilitySlotService.getSlotsForStylist(principal.getUserId()));
                 model.addAttribute("appointmentStatusBySlotId", appointmentStatusBySlotId(appointments));
+                model.addAttribute("appointmentCustomerNameBySlotId", appointmentCustomerNameBySlotId(appointments));
 
                 long upcomingTodayCount = upcomingAppointments.stream()
                         .filter(a -> a.getSlotStartDateTime() != null
@@ -214,6 +215,25 @@ public class AuthController {
      * Uses the latest appointment record for each slot so reused slots show their current appointment state.
      */
     static Map<Integer, AppointmentStatus> appointmentStatusBySlotId(List<AppointmentDto> appointments) {
+        Map<Integer, AppointmentDto> latestAppointmentBySlotId = latestAppointmentBySlotId(appointments);
+        Map<Integer, AppointmentStatus> statusBySlotId = new HashMap<>();
+        latestAppointmentBySlotId.forEach((slotId, appointment) -> statusBySlotId.put(slotId, appointment.getStatus()));
+        return statusBySlotId;
+    }
+
+    static Map<Integer, String> appointmentCustomerNameBySlotId(List<AppointmentDto> appointments) {
+        Map<Integer, String> customerNameBySlotId = new HashMap<>();
+        latestAppointmentBySlotId(appointments).forEach((slotId, appointment) -> {
+            String customerName = appointment.getCustomerName();
+            if (customerName == null || customerName.isBlank()) {
+                customerName = "Customer #" + appointment.getCustomerUserId();
+            }
+            customerNameBySlotId.put(slotId, customerName);
+        });
+        return customerNameBySlotId;
+    }
+
+    private static Map<Integer, AppointmentDto> latestAppointmentBySlotId(List<AppointmentDto> appointments) {
         Map<Integer, AppointmentDto> latestAppointmentBySlotId = new HashMap<>();
         for (AppointmentDto appointment : appointments) {
             if (appointment.getAvailabilitySlotId() <= 0 || appointment.getStatus() == null) {
@@ -225,10 +245,7 @@ public class AuthController {
                     appointment,
                     (existing, candidate) -> candidate.getId() > existing.getId() ? candidate : existing);
         }
-
-        Map<Integer, AppointmentStatus> statusBySlotId = new HashMap<>();
-        latestAppointmentBySlotId.forEach((slotId, appointment) -> statusBySlotId.put(slotId, appointment.getStatus()));
-        return statusBySlotId;
+        return latestAppointmentBySlotId;
     }
 
     /**

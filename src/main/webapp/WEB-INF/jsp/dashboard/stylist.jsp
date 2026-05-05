@@ -430,6 +430,8 @@
                                             List<AvailabilitySlot> slots = (List<AvailabilitySlot>) request.getAttribute("availabilitySlots");
                                             Map<Integer, AppointmentStatus> appointmentStatusBySlotId =
                                                     (Map<Integer, AppointmentStatus>) request.getAttribute("appointmentStatusBySlotId");
+                                            Map<Integer, String> appointmentCustomerNameBySlotId =
+                                                    (Map<Integer, String>) request.getAttribute("appointmentCustomerNameBySlotId");
                                             if (slots != null && !slots.isEmpty()) {
                                                 for (AvailabilitySlot slot : slots) {
                                         %>
@@ -467,6 +469,14 @@
                                                             }
                                                     %>
                                                         <span class="badge <%= appointmentBadgeClass %>"><%= slotAppointmentStatus.toString() %></span>
+                                                        <%
+                                                            String slotCustomerName = appointmentCustomerNameBySlotId == null
+                                                                    ? null
+                                                                    : appointmentCustomerNameBySlotId.get(slot.getId());
+                                                            if (slotCustomerName != null && !slotCustomerName.isBlank()) {
+                                                        %>
+                                                            <div class="small fw-medium mt-1"><%= slotCustomerName %></div>
+                                                        <% } %>
                                                     <% } else { %>
                                                         <span class="text-muted small">-</span>
                                                     <% } %>
