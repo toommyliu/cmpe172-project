@@ -389,7 +389,7 @@ public class AppointmentController {
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Only available slots can be cancelled.");
         }
-        return "redirect:/dashboard";
+        return "redirect:/dashboard?tab=availability#your-slots";
     }
 
     private LocalDateTime parseDateTimeInput(String value) {

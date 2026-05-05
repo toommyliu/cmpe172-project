@@ -477,7 +477,7 @@
                                                             <% if (csrfToken != null) { %>
                                                                 <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
                                                             <% } %>
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Slot</button>
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Cancel this availability slot? Customers will no longer be able to book it.')">Cancel Slot</button>
                                                         </form>
                                                     <% } else { %>
                                                         <span class="text-muted small">-</span>
