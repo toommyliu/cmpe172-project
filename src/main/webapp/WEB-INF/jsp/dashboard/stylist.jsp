@@ -42,11 +42,12 @@
         scroll-margin-top: 6rem;
     }
 
-    .availability-settings-sticky {
-        position: relative;
-        z-index: 10;
-        padding-top: 0;
-        padding-bottom: 2rem;
+    .availability-settings-card {
+        font-size: 0.9rem;
+    }
+
+    .availability-settings-card .card-body {
+        padding: 1rem;
     }
 
     .dashboard-wrapper {
@@ -77,6 +78,10 @@
 
     .tabs-inner-container {
         border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .hidden {
+        display: none !important;
     }
 </style>
 
@@ -366,27 +371,149 @@
             <div class="row g-4">
                 <div class="col-lg-3 d-none d-lg-block">
                     <div class="sticky-top" style="top: 0; z-index: 10; background-color: var(--bs-tertiary-bg); padding-top: 1.5rem;">
-                        <nav id="availability-scrollspy" class="nav nav-pills flex-column">
+                        <nav id="availability-scrollspy" class="nav nav-pills flex-column mb-3">
+                            <a class="nav-link" href="#your-slots">Your Slots</a>
                             <a class="nav-link" href="#create-availability">Create Availability</a>
                             <a class="nav-link ms-3 my-1" href="#one-off-slot">One-Off Slot</a>
                             <a class="nav-link ms-3 my-1" href="#bulk-create">Bulk Create</a>
-                            <a class="nav-link" href="#your-slots">Your Slots</a>
                         </nav>
+                        <div class="card border-0 availability-settings-card shadow-sm">
+                            <div class="card-header bg-white border-bottom py-2">
+                                <h2 class="h6 mb-0 fw-bold">Availability Settings</h2>
+                            </div>
+                            <div class="card-body text-muted">
+                                <div class="mb-2">
+                                    <div class="small text-uppercase fw-semibold">Service</div>
+                                    <strong class="text-body"><%= stylistServiceName == null ? "Not Assigned" : stylistServiceName %></strong>
+                                </div>
+                                <div>
+                                    <div class="small text-uppercase fw-semibold">Base Timing</div>
+                                    <strong class="text-body"><%= stylistServiceDurationMinutes %> minutes</strong>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="col-lg-9">
-                    <div class="availability-settings-sticky">
-                        <div id="create-availability" class="card border-0 mb-0">
-                            <div class="card-header bg-white border-bottom py-3">
-                                <h2 class="h5 mb-0 fw-bold">Availability Settings</h2>
+                    <div id="your-slots" class="card border-0 mb-4">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <h2 class="h5 mb-0 fw-bold">Your Availability Slots</h2>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    <label for="availability-status-filter" class="small text-muted mb-0">Show:</label>
+                                    <select id="availability-status-filter" class="form-select form-select-sm" style="width: auto;">
+                                        <option value="Available" selected>Available</option>
+                                        <option value="Booked">Booked</option>
+                                        <option value="Expired">Expired</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                        <option value="all">All slots</option>
+                                    </select>
+                                    <a class="btn btn-sm btn-outline-primary" href="#one-off-slot">Add slots</a>
+                                </div>
                             </div>
-                            <div class="card-body">
-                                <p class="text-muted mb-0">
-                                    Assigned Service: <strong><%= stylistServiceName == null ? "Not Assigned" : stylistServiceName %></strong>
-                                    · Base Timing: <strong><%= stylistServiceDurationMinutes %> minutes</strong>
-                                </p>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Start</th>
+                                            <th>End</th>
+                                            <th>Status</th>
+                                            <th>Appointment</th>
+                                            <th class="pe-4 text-end">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <%
+                                            List<AvailabilitySlot> slots = (List<AvailabilitySlot>) request.getAttribute("availabilitySlots");
+                                            Map<Integer, AppointmentStatus> appointmentStatusBySlotId =
+                                                    (Map<Integer, AppointmentStatus>) request.getAttribute("appointmentStatusBySlotId");
+                                            if (slots != null && !slots.isEmpty()) {
+                                                for (AvailabilitySlot slot : slots) {
+                                        %>
+                                            <tr data-slot-status="<%= slot.getStatus().toString() %>">
+                                                <td><div class="small fw-medium"><%= slot.getStartDateTime().format(slotDateFormatter) %></div></td>
+                                                <td><div class="small text-muted"><%= slot.getEndDateTime().format(slotDateFormatter) %></div></td>
+                                                <td>
+                                                    <%
+                                                        String badgeClass = "bg-secondary";
+                                                        if (slot.getStatus() == AvailabilitySlotStatus.Available) {
+                                                            badgeClass = "bg-success";
+                                                        } else if (slot.getStatus() == AvailabilitySlotStatus.Booked) {
+                                                            badgeClass = "bg-primary";
+                                                        } else if (slot.getStatus() == AvailabilitySlotStatus.Expired) {
+                                                            badgeClass = "bg-secondary";
+                                                        } else if (slot.getStatus() == AvailabilitySlotStatus.Cancelled) {
+                                                            badgeClass = "bg-dark";
+                                                        }
+                                                    %>
+                                                    <span class="badge <%= badgeClass %>"><%= slot.getStatus().toString() %></span>
+                                                </td>
+                                                <td>
+                                                    <%
+                                                        AppointmentStatus slotAppointmentStatus = appointmentStatusBySlotId == null
+                                                                ? null
+                                                                : appointmentStatusBySlotId.get(slot.getId());
+                                                        if (slotAppointmentStatus != null) {
+                                                            String appointmentBadgeClass = "bg-secondary";
+                                                            if (slotAppointmentStatus == AppointmentStatus.Booked) {
+                                                                appointmentBadgeClass = "bg-primary";
+                                                            } else if (slotAppointmentStatus == AppointmentStatus.Complete) {
+                                                                appointmentBadgeClass = "bg-success";
+                                                            } else if (slotAppointmentStatus == AppointmentStatus.Canceled) {
+                                                                appointmentBadgeClass = "bg-danger";
+                                                            }
+                                                    %>
+                                                        <span class="badge <%= appointmentBadgeClass %>"><%= slotAppointmentStatus.toString() %></span>
+                                                    <% } else { %>
+                                                        <span class="text-muted small">-</span>
+                                                    <% } %>
+                                                </td>
+                                                <td class="pe-4 text-end">
+                                                    <% if (slot.getStatus() == AvailabilitySlotStatus.Available) { %>
+                                                        <form method="post" action="/stylist/availability/<%= slot.getId() %>/delete" class="d-inline">
+                                                            <% if (csrfToken != null) { %>
+                                                                <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
+                                                            <% } %>
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Slot</button>
+                                                        </form>
+                                                    <% } else { %>
+                                                        <span class="text-muted small">-</span>
+                                                    <% } %>
+                                                </td>
+                                            </tr>
+                                        <%
+                                                }
+                                        %>
+                                            <tr id="availability-filter-empty" class="d-none">
+                                                <td colspan="5" class="text-center py-4 text-muted">No slots match this filter.</td>
+                                            </tr>
+                                        <%
+                                            } else {
+                                        %>
+                                            <tr>
+                                                <td colspan="5" class="text-center py-5 text-muted">No availability slots created yet.</td>
+                                            </tr>
+                                        <%
+                                            }
+                                        %>
+                                    </tbody>
+                                </table>
                             </div>
+                        </div>
+                    </div>
+
+                    <div id="create-availability" class="card border-0 mb-4 d-lg-none availability-settings-card">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h2 class="h5 mb-0 fw-bold">Availability Settings</h2>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-0">
+                                Assigned Service: <strong><%= stylistServiceName == null ? "Not Assigned" : stylistServiceName %></strong>
+                                · Base Timing: <strong><%= stylistServiceDurationMinutes %> minutes</strong>
+                            </p>
                         </div>
                     </div>
 
@@ -454,96 +581,6 @@
                         </div>
                     </div>
 
-                    <div id="your-slots" class="card border-0 mb-5">
-                        <div class="card-header bg-white border-bottom py-3">
-                            <h2 class="h5 mb-0 fw-bold">Your Availability Slots</h2>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Start</th>
-                                            <th>End</th>
-                                            <th>Status</th>
-                                            <th>Appointment</th>
-                                            <th class="pe-4 text-end">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <%
-                                            List<AvailabilitySlot> slots = (List<AvailabilitySlot>) request.getAttribute("availabilitySlots");
-                                            Map<Integer, AppointmentStatus> appointmentStatusBySlotId =
-                                                    (Map<Integer, AppointmentStatus>) request.getAttribute("appointmentStatusBySlotId");
-                                            if (slots != null && !slots.isEmpty()) {
-                                                for (AvailabilitySlot slot : slots) {
-                                        %>
-                                            <tr>
-                                                <td><div class="small fw-medium"><%= slot.getStartDateTime().format(slotDateFormatter) %></div></td>
-                                                <td><div class="small text-muted"><%= slot.getEndDateTime().format(slotDateFormatter) %></div></td>
-                                                <td>
-                                                    <%
-                                                        String badgeClass = "bg-secondary";
-                                                        if (slot.getStatus() == AvailabilitySlotStatus.Available) {
-                                                            badgeClass = "bg-success";
-                                                        } else if (slot.getStatus() == AvailabilitySlotStatus.Booked) {
-                                                            badgeClass = "bg-primary";
-                                                        } else if (slot.getStatus() == AvailabilitySlotStatus.Expired) {
-                                                            badgeClass = "bg-secondary";
-                                                        } else if (slot.getStatus() == AvailabilitySlotStatus.Cancelled) {
-                                                            badgeClass = "bg-dark";
-                                                        }
-                                                    %>
-                                                    <span class="badge <%= badgeClass %>"><%= slot.getStatus().toString() %></span>
-                                                </td>
-                                                <td>
-                                                    <%
-                                                        AppointmentStatus slotAppointmentStatus = appointmentStatusBySlotId == null
-                                                                ? null
-                                                                : appointmentStatusBySlotId.get(slot.getId());
-                                                        if (slotAppointmentStatus != null) {
-                                                            String appointmentBadgeClass = "bg-secondary";
-                                                            if (slotAppointmentStatus == AppointmentStatus.Booked) {
-                                                                appointmentBadgeClass = "bg-primary";
-                                                            } else if (slotAppointmentStatus == AppointmentStatus.Complete) {
-                                                                appointmentBadgeClass = "bg-success";
-                                                            } else if (slotAppointmentStatus == AppointmentStatus.Canceled) {
-                                                                appointmentBadgeClass = "bg-danger";
-                                                            }
-                                                    %>
-                                                        <span class="badge <%= appointmentBadgeClass %>"><%= slotAppointmentStatus.toString() %></span>
-                                                    <% } else { %>
-                                                        <span class="text-muted small">-</span>
-                                                    <% } %>
-                                                </td>
-                                                <td class="pe-4 text-end">
-                                                    <% if (slot.getStatus() == AvailabilitySlotStatus.Available) { %>
-                                                        <form method="post" action="/stylist/availability/<%= slot.getId() %>/delete" class="d-inline">
-                                                            <% if (csrfToken != null) { %>
-                                                                <input type="hidden" name="<%= csrfToken.getParameterName() %>" value="<%= csrfToken.getToken() %>">
-                                                            <% } %>
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Slot</button>
-                                                        </form>
-                                                    <% } else { %>
-                                                        <span class="text-muted small">-</span>
-                                                    <% } %>
-                                                </td>
-                                            </tr>
-                                        <%
-                                                }
-                                            } else {
-                                        %>
-                                            <tr>
-                                                <td colspan="5" class="text-center py-5 text-muted">No availability slots created yet.</td>
-                                            </tr>
-                                        <%
-                                            }
-                                        %>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -709,6 +746,32 @@
 
             updateWeekdayRequirement();
             
+            // Availability filtering logic
+            const availabilityStatusFilter = document.getElementById('availability-status-filter');
+            const availabilityRows = document.querySelectorAll('#your-slots tbody tr[data-slot-status]');
+            const availabilityFilterEmpty = document.getElementById('availability-filter-empty');
+
+            function applyAvailabilityFilter() {
+                if (!availabilityStatusFilter) return;
+                const selectedStatus = availabilityStatusFilter.value;
+                let visibleCount = 0;
+
+                availabilityRows.forEach(row => {
+                    const isVisible = selectedStatus === 'all' || row.getAttribute('data-slot-status') === selectedStatus;
+                    row.classList.toggle('d-none', !isVisible);
+                    if (isVisible) visibleCount += 1;
+                });
+
+                if (availabilityFilterEmpty) {
+                    availabilityFilterEmpty.classList.toggle('d-none', visibleCount > 0 || availabilityRows.length === 0);
+                }
+            }
+
+            if (availabilityStatusFilter) {
+                availabilityStatusFilter.addEventListener('change', applyAvailabilityFilter);
+                applyAvailabilityFilter();
+            }
+
             // History filtering logic
             const statusFilter = document.getElementById('history-status-filter');
             const historyRows = document.querySelectorAll('#history-services-content tbody tr[data-status]');
