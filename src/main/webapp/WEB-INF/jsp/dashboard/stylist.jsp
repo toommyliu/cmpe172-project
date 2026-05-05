@@ -42,22 +42,10 @@
     }
 
     .availability-settings-sticky {
-        position: sticky;
-        top: 0;
-        z-index: 1020;
-        background-color: var(--bs-tertiary-bg);
-        padding-top: 1.5rem; /* Opaque cap to bridge gap to tabs */
+        position: relative;
+        z-index: 10;
+        padding-top: 0;
         padding-bottom: 2rem;
-        transition: none;
-    }
-
-    .availability-settings-sticky::after {
-        position: absolute;
-        bottom: 1rem;
-        left: 0;
-        right: 0;
-        height: 1rem;
-        pointer-events: none;
     }
 
     .dashboard-wrapper {
@@ -78,6 +66,7 @@
         overflow-y: auto;
         padding-bottom: 3rem;
         background-color: var(--bs-tertiary-bg);
+        scroll-behavior: smooth;
     }
 
     .tabs-wrapper {
@@ -129,7 +118,7 @@
             </div>
         </header>
 
-        <main class="dashboard-content" id="dashboard-scroll-area" data-bs-spy="scroll" data-bs-target="#availability-scrollspy" data-bs-offset="100">
+        <main class="dashboard-content" id="dashboard-scroll-area" data-bs-spy="scroll" data-bs-target="#availability-scrollspy" data-bs-root-margin="0px 0px -40%" data-bs-smooth-scroll="true" tabindex="0">
             <div class="container py-4">
         <%
             CsrfToken csrfToken = (CsrfToken) request.getAttribute("_csrf");
