@@ -23,7 +23,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class AuthController {
@@ -118,6 +120,11 @@ public class AuthController {
                                 principal.getUserId(),
                                 principal.getUserRole(),
                                 now));
+                addAvailabilityExpirationNotice(
+                        model,
+                        availabilitySlotService.reconcileExpiredAvailabilitySlotsForStylist(
+                                principal.getUserId(),
+                                now));
 
                 List<AppointmentDto> appointments = appointmentService
                         .getAppointmentViewsForStylist(principal.getUserId());
@@ -138,6 +145,7 @@ public class AuthController {
                 model.addAttribute("pastAppointments", pastAppointments);
                 model.addAttribute("availabilitySlots",
                         availabilitySlotService.getSlotsForStylist(principal.getUserId()));
+                model.addAttribute("appointmentStatusBySlotId", appointmentStatusBySlotId(appointments));
 
                 long upcomingTodayCount = upcomingAppointments.stream()
                         .filter(a -> a.getSlotStartDateTime() != null
@@ -203,6 +211,27 @@ public class AuthController {
     }
 
     /**
+     * Uses the latest appointment record for each slot so reused slots show their current appointment state.
+     */
+    static Map<Integer, AppointmentStatus> appointmentStatusBySlotId(List<AppointmentDto> appointments) {
+        Map<Integer, AppointmentDto> latestAppointmentBySlotId = new HashMap<>();
+        for (AppointmentDto appointment : appointments) {
+            if (appointment.getAvailabilitySlotId() <= 0 || appointment.getStatus() == null) {
+                continue;
+            }
+
+            latestAppointmentBySlotId.merge(
+                    appointment.getAvailabilitySlotId(),
+                    appointment,
+                    (existing, candidate) -> candidate.getId() > existing.getId() ? candidate : existing);
+        }
+
+        Map<Integer, AppointmentStatus> statusBySlotId = new HashMap<>();
+        latestAppointmentBySlotId.forEach((slotId, appointment) -> statusBySlotId.put(slotId, appointment.getStatus()));
+        return statusBySlotId;
+    }
+
+    /**
      * Preserves any existing success flash while surfacing automatic completion reconciliation.
      */
     private void addReconciliationNotice(Model model, int reconciledCount) {
@@ -211,6 +240,22 @@ public class AuthController {
         }
 
         String notice = reconciledCount + " past appointment(s) were automatically marked completed.";
+        appendSuccessNotice(model, notice);
+    }
+
+    /**
+     * Reports unused availability that moved out of the bookable window.
+     */
+    private void addAvailabilityExpirationNotice(Model model, int expiredCount) {
+        if (expiredCount <= 0) {
+            return;
+        }
+
+        String notice = expiredCount + " past availability slot(s) were automatically marked expired.";
+        appendSuccessNotice(model, notice);
+    }
+
+    private void appendSuccessNotice(Model model, String notice) {
         Object existingSuccessMessage = model.asMap().get("successMessage");
         if (existingSuccessMessage instanceof String existingMessage && !existingMessage.isBlank()) {
             model.addAttribute("successMessage", existingMessage + " " + notice);

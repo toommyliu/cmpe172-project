@@ -19,5 +19,7 @@ public interface AvailabilitySlotRepository {
 
     boolean cancelAvailableSlotByIdAndStylistUserId(int id, int stylistUserId);
 
+    int expireAvailableSlotsForStylistEndedBefore(int stylistUserId, LocalDateTime cutoff);
+
     AvailabilitySlot update(AvailabilitySlot slot);
 }

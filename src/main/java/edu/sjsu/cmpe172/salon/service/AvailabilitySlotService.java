@@ -34,6 +34,13 @@ public class AvailabilitySlotService {
         return providerScheduleService.filterSlotsWithinProviderHours(DEFAULT_PROVIDER_ID, slots);
     }
 
+    /**
+     * Marks this stylist's unused availability slots expired once their scheduled window has ended.
+     */
+    public int reconcileExpiredAvailabilitySlotsForStylist(int stylistUserId, LocalDateTime cutoff) {
+        return repository.expireAvailableSlotsForStylistEndedBefore(stylistUserId, cutoff);
+    }
+
     public AvailabilitySlot createSlot(int stylistUserId, LocalDateTime startDateTime, LocalDateTime endDateTime) {
         if (startDateTime == null || endDateTime == null) {
             throw new IllegalArgumentException("Start and end times are required.");

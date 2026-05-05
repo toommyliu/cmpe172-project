@@ -352,7 +352,11 @@ public class AppointmentService {
 
             // Make the slot available again
             availabilitySlotRepository.findById(appointment.getAvailabilitySlotId()).ifPresent(slot -> {
-                slot.setStatus(AvailabilitySlotStatus.Available);
+                if (slot.getEndDateTime() != null && !slot.getEndDateTime().isAfter(LocalDateTime.now())) {
+                    slot.setStatus(AvailabilitySlotStatus.Expired);
+                } else {
+                    slot.setStatus(AvailabilitySlotStatus.Available);
+                }
                 availabilitySlotRepository.update(slot);
             });
 

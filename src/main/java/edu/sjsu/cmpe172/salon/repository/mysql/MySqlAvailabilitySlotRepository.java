@@ -112,6 +112,20 @@ public class MySqlAvailabilitySlotRepository implements AvailabilitySlotReposito
     }
 
     @Override
+    public int expireAvailableSlotsForStylistEndedBefore(int stylistUserId, LocalDateTime cutoff) {
+        try (Connection connection = openConnection();
+             PreparedStatement statement = connection.prepareStatement(AvailabilitySlotSql.EXPIRE_AVAILABLE_FOR_STYLIST_ENDED_BEFORE)) {
+            statement.setInt(1, AvailabilitySlotStatus.Expired.getValue());
+            statement.setInt(2, stylistUserId);
+            statement.setInt(3, AvailabilitySlotStatus.Available.getValue());
+            statement.setTimestamp(4, Timestamp.valueOf(cutoff));
+            return statement.executeUpdate();
+        } catch (SQLException ex) {
+            throw new IllegalStateException("Failed to expire availability slots for stylist " + stylistUserId, ex);
+        }
+    }
+
+    @Override
     public AvailabilitySlot update(AvailabilitySlot slot) {
         try (Connection connection = openConnection();
              PreparedStatement statement = connection.prepareStatement(AvailabilitySlotSql.UPDATE)) {

@@ -4,6 +4,7 @@
 <%@ page import="edu.sjsu.cmpe172.salon.enums.AvailabilitySlotStatus" %>
 <%@ page import="edu.sjsu.cmpe172.salon.enums.AppointmentStatus" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page import="java.time.LocalDateTime" %>
 <%@ page import="java.time.format.DateTimeFormatter" %>
 <%@ page import="org.springframework.security.web.csrf.CsrfToken" %>
@@ -465,12 +466,15 @@
                                             <th>Start</th>
                                             <th>End</th>
                                             <th>Status</th>
+                                            <th>Appointment</th>
                                             <th class="pe-4 text-end">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <%
                                             List<AvailabilitySlot> slots = (List<AvailabilitySlot>) request.getAttribute("availabilitySlots");
+                                            Map<Integer, AppointmentStatus> appointmentStatusBySlotId =
+                                                    (Map<Integer, AppointmentStatus>) request.getAttribute("appointmentStatusBySlotId");
                                             if (slots != null && !slots.isEmpty()) {
                                                 for (AvailabilitySlot slot : slots) {
                                         %>
@@ -484,11 +488,33 @@
                                                             badgeClass = "bg-success";
                                                         } else if (slot.getStatus() == AvailabilitySlotStatus.Booked) {
                                                             badgeClass = "bg-primary";
+                                                        } else if (slot.getStatus() == AvailabilitySlotStatus.Expired) {
+                                                            badgeClass = "bg-secondary";
                                                         } else if (slot.getStatus() == AvailabilitySlotStatus.Cancelled) {
                                                             badgeClass = "bg-dark";
                                                         }
                                                     %>
                                                     <span class="badge <%= badgeClass %>"><%= slot.getStatus().toString() %></span>
+                                                </td>
+                                                <td>
+                                                    <%
+                                                        AppointmentStatus slotAppointmentStatus = appointmentStatusBySlotId == null
+                                                                ? null
+                                                                : appointmentStatusBySlotId.get(slot.getId());
+                                                        if (slotAppointmentStatus != null) {
+                                                            String appointmentBadgeClass = "bg-secondary";
+                                                            if (slotAppointmentStatus == AppointmentStatus.Booked) {
+                                                                appointmentBadgeClass = "bg-primary";
+                                                            } else if (slotAppointmentStatus == AppointmentStatus.Complete) {
+                                                                appointmentBadgeClass = "bg-success";
+                                                            } else if (slotAppointmentStatus == AppointmentStatus.Canceled) {
+                                                                appointmentBadgeClass = "bg-danger";
+                                                            }
+                                                    %>
+                                                        <span class="badge <%= appointmentBadgeClass %>"><%= slotAppointmentStatus.toString() %></span>
+                                                    <% } else { %>
+                                                        <span class="text-muted small">-</span>
+                                                    <% } %>
                                                 </td>
                                                 <td class="pe-4 text-end">
                                                     <% if (slot.getStatus() == AvailabilitySlotStatus.Available) { %>

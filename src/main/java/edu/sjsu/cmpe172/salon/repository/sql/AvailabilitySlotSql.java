@@ -65,6 +65,15 @@ public final class AvailabilitySlotSql {
               AND status = 1
             """;
 
+    public static final String EXPIRE_AVAILABLE_FOR_STYLIST_ENDED_BEFORE = """
+            UPDATE availability_slots
+            SET status = ?,
+                version = version + 1
+            WHERE stylist_user_id = ?
+              AND status = ?
+              AND end_datetime <= ?
+            """;
+
     public static final String MARK_SLOT_BOOKED_BY_ID_AND_VERSION = """
             UPDATE availability_slots
             SET status = 2,

@@ -3,6 +3,7 @@ package edu.sjsu.cmpe172.salon.enums;
 public enum AvailabilitySlotStatus {
     Available(1),
     Booked(2),
+    Expired(3),
     Cancelled(100);
 
     private final int value;
@@ -19,6 +20,7 @@ public enum AvailabilitySlotStatus {
         return switch (value) {
             case 1 -> Available;
             case 2 -> Booked;
+            case 3 -> Expired;
             case 100 -> Cancelled;
             default -> throw new IllegalArgumentException("Invalid availability slot status value: " + value);
         };
@@ -29,6 +31,7 @@ public enum AvailabilitySlotStatus {
         return switch (this) {
             case Available -> "Available";
             case Booked -> "Booked";
+            case Expired -> "Expired";
             case Cancelled -> "Cancelled";
         };
     }
