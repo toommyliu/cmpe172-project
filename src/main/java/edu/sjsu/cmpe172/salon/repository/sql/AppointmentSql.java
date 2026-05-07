@@ -4,6 +4,15 @@ public final class AppointmentSql {
     private AppointmentSql() {
     }
 
+    /*
+     * active_booking_slot_id is generated from availability_slot_id only while an
+     * appointment is Booked. We cannot make availability_slot_id itself unique
+     * because canceled/completed appointment rows are retained as history and
+     * still point at the original slot. The generated expression returns NULL
+     * for those historical rows, and MySQL permits multiple NULL values in a
+     * unique index. That lets the database reject duplicate active bookings
+     * without blocking valid history or rebooking after cancellation.
+     */
     public static final String CREATE_TABLE = """
             CREATE TABLE IF NOT EXISTS appointments (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -12,9 +21,30 @@ public final class AppointmentSql {
                 service_id INT NOT NULL,
                 availability_slot_id INT NOT NULL,
                 status INT NOT NULL DEFAULT 1,
+                active_booking_slot_id INT
+                    GENERATED ALWAYS AS (
+                        CASE WHEN status = 1 THEN availability_slot_id ELSE NULL END
+                    ) STORED,
                 CONSTRAINT fk_appointments_services
                     FOREIGN KEY (service_id) REFERENCES services(id)
             )
+            """;
+
+    public static final String ACTIVE_BOOKING_SLOT_COLUMN = "active_booking_slot_id";
+
+    public static final String ACTIVE_BOOKING_SLOT_INDEX = "ux_appointments_active_booking_slot";
+
+    public static final String ADD_ACTIVE_BOOKING_SLOT_COLUMN = """
+            ALTER TABLE appointments
+            ADD COLUMN active_booking_slot_id INT
+                GENERATED ALWAYS AS (
+                    CASE WHEN status = 1 THEN availability_slot_id ELSE NULL END
+                ) STORED
+            """;
+
+    public static final String CREATE_ACTIVE_BOOKING_SLOT_INDEX = """
+            CREATE UNIQUE INDEX ux_appointments_active_booking_slot
+            ON appointments (active_booking_slot_id)
             """;
 
     public static final String FIND_ALL = """

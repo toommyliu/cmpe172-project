@@ -28,6 +28,9 @@ import java.util.Optional;
 
 @Repository
 public class MySqlAppointmentRepository implements AppointmentRepository {
+    private static final int MYSQL_DUPLICATE_KEY_ERROR_CODE = 1062;
+    private static final String MYSQL_DATABASE_PRODUCT = "mysql";
+
     private final String dbUrl;
     private final String dbUsername;
     private final String dbPassword;
@@ -134,9 +137,14 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
                         throw new IllegalArgumentException("Selected time slot does not belong to the selected stylist.");
                     }
                     if (slotStatus != AvailabilitySlotStatus.Available) {
+                        if (slotStatus == AvailabilitySlotStatus.Booked) {
+                            throw new SlotReservationConflictException("Selected time slot was just booked by another customer.");
+                        }
                         throw new IllegalArgumentException("Selected time slot is no longer available.");
                     }
 
+                    // Optimistic slot reservation: only the transaction holding
+                    // the latest available version may flip the slot to Booked.
                     markSlotBookedStatement.setInt(1, appointment.getAvailabilitySlotId());
                     markSlotBookedStatement.setInt(2, slotVersion);
                     if (markSlotBookedStatement.executeUpdate() == 0) {
@@ -160,6 +168,9 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
             throw ex;
         } catch (SQLException ex) {
             rollbackQuietly(connection);
+            if (isActiveBookingDuplicateKey(ex)) {
+                throw new SlotReservationConflictException("Selected time slot was just booked by another customer.", ex);
+            }
             throw new IllegalStateException("Failed to create appointment", ex);
         } finally {
             closeQuietly(connection);
@@ -207,9 +218,14 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
                         throw new IllegalArgumentException("Selected time slot does not belong to the selected stylist.");
                     }
                     if (slotStatus != AvailabilitySlotStatus.Available) {
+                        if (slotStatus == AvailabilitySlotStatus.Booked) {
+                            throw new SlotReservationConflictException("Selected time slot was just booked by another customer.");
+                        }
                         throw new IllegalArgumentException("Selected time slot is no longer available.");
                     }
 
+                    // Optimistic slot reservation mirrors appointment creation
+                    // so concurrent reschedules cannot claim the same slot.
                     markSlotBookedStatement.setInt(1, appointment.getAvailabilitySlotId());
                     markSlotBookedStatement.setInt(2, slotVersion);
                     if (markSlotBookedStatement.executeUpdate() == 0) {
@@ -233,6 +249,9 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
             throw ex;
         } catch (SQLException ex) {
             rollbackQuietly(connection);
+            if (isActiveBookingDuplicateKey(ex)) {
+                throw new SlotReservationConflictException("Selected time slot was just booked by another customer.", ex);
+            }
             throw new IllegalStateException("Failed to reschedule appointment " + appointment.getId(), ex);
         } finally {
             closeQuietly(connection);
@@ -356,9 +375,85 @@ public class MySqlAppointmentRepository implements AppointmentRepository {
              Statement statement = connection.createStatement()) {
             statement.executeUpdate(ServiceSql.CREATE_TABLE);
             statement.executeUpdate(AppointmentSql.CREATE_TABLE);
+            ensureActiveBookingConstraint(connection, statement);
         } catch (SQLException ex) {
             throw new IllegalStateException("Failed to initialize appointments schema", ex);
         }
+    }
+
+    private void ensureActiveBookingConstraint(Connection connection, Statement statement) throws SQLException {
+        if (!isMySql(connection)) {
+            throw new SQLException("Appointments schema requires MySQL generated columns and unique indexes.");
+        }
+
+        // Existing databases may predate the active-booking guard, so install
+        // it idempotently without hiding corrupt duplicate booked rows.
+        if (!columnExists(connection, "appointments", AppointmentSql.ACTIVE_BOOKING_SLOT_COLUMN)) {
+            statement.executeUpdate(AppointmentSql.ADD_ACTIVE_BOOKING_SLOT_COLUMN);
+        }
+        if (!indexExists(connection, "appointments", AppointmentSql.ACTIVE_BOOKING_SLOT_INDEX)) {
+            statement.executeUpdate(AppointmentSql.CREATE_ACTIVE_BOOKING_SLOT_INDEX);
+        }
+    }
+
+    private boolean columnExists(Connection connection, String tableName, String columnName) throws SQLException {
+        String schemaName = connection.getCatalog();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT COUNT(*)
+                FROM information_schema.columns
+                WHERE table_schema = ?
+                  AND table_name = ?
+                  AND column_name = ?
+                """)) {
+            statement.setString(1, schemaName);
+            statement.setString(2, tableName);
+            statement.setString(3, columnName);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1) > 0;
+            }
+        }
+    }
+
+    private boolean indexExists(Connection connection, String tableName, String indexName) throws SQLException {
+        String schemaName = connection.getCatalog();
+        try (PreparedStatement statement = connection.prepareStatement("""
+                SELECT COUNT(*)
+                FROM information_schema.statistics
+                WHERE table_schema = ?
+                  AND table_name = ?
+                  AND index_name = ?
+                """)) {
+            statement.setString(1, schemaName);
+            statement.setString(2, tableName);
+            statement.setString(3, indexName);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getInt(1) > 0;
+            }
+        }
+    }
+
+    private boolean isActiveBookingDuplicateKey(SQLException ex) {
+        SQLException current = ex;
+        while (current != null) {
+            String message = current.getMessage();
+            if (current.getErrorCode() == MYSQL_DUPLICATE_KEY_ERROR_CODE
+                    && message != null
+                    && message.contains(AppointmentSql.ACTIVE_BOOKING_SLOT_INDEX)) {
+                return true;
+            }
+            current = current.getNextException();
+        }
+        return false;
+    }
+
+    private boolean isMySql(Connection connection) throws SQLException {
+        String databaseProductName = connection.getMetaData().getDatabaseProductName();
+        if (databaseProductName == null) {
+            return false;
+        }
+        return databaseProductName.toLowerCase().contains(MYSQL_DATABASE_PRODUCT);
     }
 
     private void rollbackQuietly(Connection connection) {
