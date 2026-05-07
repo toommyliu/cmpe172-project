@@ -121,7 +121,7 @@
                     }
 
                     List<AppointmentDto> upcomingAppointments = (List<AppointmentDto>) request.getAttribute("upcomingAppointments");
-                    List<AppointmentDto> pastAppointments = (List<AppointmentDto>) request.getAttribute("pastAppointments");
+                    List<AppointmentDto> historyAppointments = (List<AppointmentDto>) request.getAttribute("historyAppointments");
                 %>
 
                 <div id="upcoming-tab-content" data-tab="upcoming">
@@ -229,18 +229,33 @@
                                     </thead>
                                     <tbody>
                                         <%
-                                            if (pastAppointments != null && !pastAppointments.isEmpty()) {
-                                                for (AppointmentDto apt : pastAppointments) {
+                                            if (historyAppointments != null && !historyAppointments.isEmpty()) {
+                                                for (AppointmentDto apt : historyAppointments) {
                                                     String serviceName = apt.getServiceName();
                                                     if (serviceName == null || serviceName.isBlank()) {
                                                         serviceName = "Service #" + apt.getServiceId();
                                                     }
-                                                    String statusBadgeClass = apt.getStatus() == AppointmentStatus.Complete ? "bg-success" : "bg-secondary opacity-75";
+                                                    String statusBadgeClass = "bg-secondary opacity-75";
+                                                    if (apt.getStatus() == AppointmentStatus.Booked) {
+                                                        statusBadgeClass = "bg-primary";
+                                                    } else if (apt.getStatus() == AppointmentStatus.Complete) {
+                                                        statusBadgeClass = "bg-success";
+                                                    } else if (apt.getStatus() == AppointmentStatus.Canceled) {
+                                                        statusBadgeClass = "bg-danger";
+                                                    }
                                         %>
                                             <tr data-status="<%= apt.getStatus().toString() %>">
                                                 <td class="ps-4"><span class="badge bg-primary text-white"><%= serviceName %></span></td>
                                                 <td><div class="small fw-medium"><%= apt.getStylistName() %></div></td>
-                                                <td><div class="small text-muted"><%= apt.getSlotStartDateTime().format(slotFormatter) %></div></td>
+                                                <td>
+                                                    <div class="small text-muted">
+                                                    <% if (apt.getSlotStartDateTime() != null) { %>
+                                                        <%= apt.getSlotStartDateTime().format(slotFormatter) %>
+                                                    <% } else { %>
+                                                        Slot <%= apt.getAvailabilitySlotId() %>
+                                                    <% } %>
+                                                    </div>
+                                                </td>
                                                 <td class="pe-4 text-end">
                                                     <span class="badge <%= statusBadgeClass %> text-white"><%= apt.getStatus().toString() %></span>
                                                 </td>

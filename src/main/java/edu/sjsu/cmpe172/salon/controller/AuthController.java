@@ -180,14 +180,13 @@ public class AuthController {
                                 Comparator.nullsLast(Comparator.naturalOrder())))
                         .toList();
 
-                List<AppointmentDto> pastAppointments = appointments.stream()
-                        .filter(a -> isPastAppointment(a, now))
+                List<AppointmentDto> historyAppointments = appointments.stream()
                         .sorted(Comparator.comparing(AppointmentDto::getSlotStartDateTime,
                                 Comparator.nullsLast(Comparator.reverseOrder())))
                         .toList();
 
                 model.addAttribute("upcomingAppointments", upcomingAppointments);
-                model.addAttribute("pastAppointments", pastAppointments);
+                model.addAttribute("historyAppointments", historyAppointments);
                 model.addAttribute("services", serviceRepository.findAll());
                 model.addAttribute("stylists", userService.getAllStylistDtos());
                 yield "dashboard/customer";
